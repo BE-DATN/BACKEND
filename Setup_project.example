@@ -1,0 +1,6 @@
+php 8.2.14
+composer 2.6.6
+
+cd root folder (Api)
+composer install
+
