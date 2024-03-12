@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('title', );
             $table->text('content', );
             $table->string('thumbnail')->nullable();
-            $table->integer('likes');
-            $table->integer('views');
+            $table->integer('likes')->default(0);
+            $table->integer('views')->default(0);
             $table->tinyInteger('status')->default(1);
             $table->timestamps();
             $table->softDeletes();

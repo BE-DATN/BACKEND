@@ -70,6 +70,7 @@ class Kernel extends HttpKernel
         'post.auth' => \App\Http\Middleware\AuthorPost::class,
         'course.auth' => \App\Http\Middleware\AuthorCourse::class,
         'action.auth' => \App\Http\Middleware\ActionOwned::class,
+        'admin.auth' => \App\Http\Middleware\Dashboard::class,
         // 'teacher' => \App\Http\Middleware\TeacherMiddleware::class,
         // 'edit.post' => \App\Http\Middleware\EditPostMiddleware::class,
     ];

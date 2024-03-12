@@ -21,6 +21,24 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 Route::get('/', function () {
+    // $data = [
+    //     [
+    //         'id' => 1,
+    //         'name' => 'John Doe',
+    //         'age'  => 32,
+    //     ],
+    //     [
+    //         'id' => 2,
+    //         'name' => 'Jane Smith',
+    //         'age' => 45
+    //     ],
+    //     [
+    //         'id' => 3,
+    //         'name' => 'George Johnson',
+    //         'age' => 60
+    //     ]
+    // ];
+    // return response()->json($data, 200);
     return response()->json([
         "Project" => env('APP_NAME'),
         "Status" => "ok!",
@@ -62,48 +80,66 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
-    Route::get('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
+    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
         'middleware' => ['api'], //, 'jwt.auth',
     ], function () {
         Route::get('refresh', [AccountController::class, 'refresh']);
         Route::get('me', [AccountController::class, 'me']);
-        Route::get('logout', [AccountController::class, 'logout']);
+        Route::post('logout', [AccountController::class, 'logout']);
     });
+
 });
 
 // Post Route
 Route::group([
     'prefix' => 'post',
 ], function () {
-    Route::get('/', [PostController::class, 'index'])->name('post.index');
-    Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id')->name('post.show');
+    Route::get('/', [PostController::class, 'index']);
+    Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id');
 
     Route::group([
         'middleware' => ['api', 'post.auth'],
     ], function () {
-        Route::get('/list-owned-posts/{userId}', [PostController::class, 'list'])->whereNumber('userId')->name('post.index');
-        Route::get('/create', [PostController::class, 'store'])->name('post.create');
-        Route::get('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->name('post.edit')->middleware('action.auth');
-        Route::get('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->name('post.delete')->middleware('action.auth');
+        Route::get('/list-owned-posts/{userId?}', [PostController::class, 'list'])->whereNumber('userId');
+        Route::post('/create', [PostController::class, 'store']);
+
+        Route::post('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->middleware('action.auth');
+        Route::post('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->middleware('action.auth');
     });
 });
 
 // Course Route
 // Route::group([
-//     'prefix' => 'course',
-// ], function () {
-//     Route::get('/', [PostController::class, 'index'])->name('post.index');
-//     Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id')->name('post.show');
-
-//     Route::group([
+    //     'prefix' => 'course',
+    // ], function () {
+        //     Route::get('/', [PostController::class, 'index']);
+        //     Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id');
+        
+        //     Route::group([
 //         'middleware' => ['api', 'post.auth'],
 //     ], function () {
-//         Route::get('/list-owned-courses/{userId}', [PostController::class, 'list'])->whereNumber('userId')->name('post.index');
+//         Route::get('/list-owned-courses/{userId}', [PostController::class, 'list'])->whereNumber('userId');
 //         Route::get('/create', [PostController::class, 'store'])->name('post.create');
 //         Route::get('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->name('post.edit')->middleware('action.auth');
 //         Route::get('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->name('post.delete')->middleware('action.auth');
 //     });
 // });
+
+// Admin Route
+Route::group([
+    'prefix' => 'admin',
+], function () {
+    Route::group([
+        'middleware' => ['api', 'admin.auth'],
+    ], function () {
+        Route::get('/', [PostController::class, 'index']);
+        Route::get('/checklogin', function() {
+            $admin = auth('ad');
+            return response()->json($admin, 200);
+        });
+        
+    });
+});

@@ -25,7 +25,8 @@ class PostAction
          * &created_at=
          * &sort=['view','esc']
          */
-        $query = DB::table('posts')->select('*');
+        $query = DB::table('posts')->select(['posts.id', 'posts.title', 'posts.content', 'thumbnail', 'likes', 'views', 'posts.created_at', 'posts.updated_at'])
+                                    ->where('posts.status', '1');
         // Search dữ liệu user ngoài bảng post -> join user
         if (array_get($attribute, 'author_name') || array_get($attribute, 'author_id')) {
             $query->join('users', 'users.id', '=', 'posts.created_by');
@@ -48,6 +49,7 @@ class PostAction
                 );
             }
         }
+
         // search post_name
         if (array_get($attribute, 'post_name')) {
             $postName = array_get($attribute, 'post_name');
@@ -57,6 +59,7 @@ class PostAction
                 "%{$postName}%"
             );
         }
+
         // search post_id
         if (array_get($attribute, 'post_id')) {
             $query->where(
@@ -64,17 +67,20 @@ class PostAction
                 '=',
                 array_get($attribute, 'post_id')
             );
-        }
+        }       
+
+
         // Search time 
         // sắp xếp view||like asc||desc
         if (array_get($attribute, 'sort')) {
             $column = array_get($attribute, 'sort')[0];
             $valueSort = array_get($attribute, 'sort')[1];
-            dd($valueSort);
+            // dd($valueSort);
             $query->orderBy($column, $valueSort);
         }
+        // dd(1);
+        return $query->paginate(Post::Limit);
 
-        // return $query->paginate(Post::Limit);
-        return $query->get();
+        return $query;
     }
 }

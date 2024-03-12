@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->integer('total_amount');
             $table->string('payment_method');
-            $table->string('voucher')->default(null);
+            $table->string('voucher')->default('');
             $table->tinyInteger('order_status')->default(0); // 0: pending, 1: processing
             $table->timestamps();
         });
