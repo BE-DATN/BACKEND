@@ -75,12 +75,10 @@ Route::group([
     'prefix' => 'account',
 ], function () {
     // Route::get('login', [AccountController::class, 'login']);
-
-
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
@@ -92,6 +90,26 @@ Route::group([
     });
 
 });
+
+
+// Cart Route
+Route::group([
+    'prefix' => 'cart',
+], function () {
+    Route::get('/', [PostController::class, 'index']);
+    Route::group([
+        'middleware' => ['api', ''],
+    ], function () {
+        Route::get('/', [PostController::class, 'index']);
+        Route::get('/checklogin', function() {
+            $admin = auth('ad')->user();
+            return response()->json($admin, 200);
+        });
+        // Route::get
+
+    });
+});
+
 
 // Post Route
 Route::group([
@@ -110,6 +128,8 @@ Route::group([
         Route::post('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->middleware('action.auth');
     });
 });
+
+
 
 // Course Route
 // Route::group([
@@ -137,9 +157,13 @@ Route::group([
     ], function () {
         Route::get('/', [PostController::class, 'index']);
         Route::get('/checklogin', function() {
-            $admin = auth('ad');
+            $admin = auth('ad')->user();
             return response()->json($admin, 200);
         });
-        
+        // Route::get
     });
+});
+
+Route::get('form', function() {
+    return view('form');
 });
