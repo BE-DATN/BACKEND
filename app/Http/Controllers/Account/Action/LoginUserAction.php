@@ -43,13 +43,14 @@ class LoginUserAction
 
     public function respondWithToken($token)
     {
-        $user = $this->tranferLoginData($this->getUserLogin());
+        $user = $this->getUserLogin();
 
         return response()->json([
-            'data' =>  $user,
+            'data' => $this->tranferLoginData($user),
             'token_type' => 'bearer',
             'access_token' => $token,
             'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' second',
+            'permission' => $user->profile->roles->first->permissions->name
             // 'refresh_token' => $refresh_token,
         ])->withCookie($this->cookie);
     }
