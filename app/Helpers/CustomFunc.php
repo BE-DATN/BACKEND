@@ -1,7 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cookie;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 if (!function_exists('isEmail')) {
     function isEmail($email)
@@ -29,7 +31,10 @@ if (!function_exists('getCookie')) {
 if (!function_exists('getCurrentUser')) {
     function getCurrentUser()
     {
-        $user = array_get(getCookie(), 'data');
+        $request = new Request();
+        $user = $request->bearerToken();
+        $user = JWTAuth::parseToken()->authenticate();
+        // $user = array_get(getCookie(), 'data');
         return $user;
     }
 }

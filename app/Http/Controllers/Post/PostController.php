@@ -50,14 +50,14 @@ class PostController extends Controller
     public function store(Request $request)
     {
         try {
-            $request->validate([
-                'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            ]);
+
+            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+            // return response()->json([$imageName]); 
+
+            // return response()->json($request->input()); 
             // dd($request->input());
 
-            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
-            // dd(public_path('/file/uploads/posts/'));
-            $request->thumbnail->move(public_path('file/uploads/posts/'), $imageName);
+            $request->file('thumbnail')->move(public_path('file/uploads/posts/'), $imageName);
 
             $user = getCurrentUser();
             $request->request->add(['created_by' => array_get($user, 'id')]);
@@ -155,7 +155,7 @@ class PostController extends Controller
         $data = Post::where('id', $id)->first();
         $data = $postDTO->postsDetail($data);
         // dd($data);
-        return view('edit', $data);
+        // return view('edit', $data);
         return response()->json($data, 200);
     }
 }

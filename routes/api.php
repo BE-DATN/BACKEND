@@ -1,8 +1,10 @@
 <?php
 
+use App\DTO\Post\PostDTO;
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
-use Illuminate\Http\Request;
+use App\Models\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -78,7 +80,7 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
@@ -92,23 +94,7 @@ Route::group([
 });
 
 
-// Cart Route
-Route::group([
-    'prefix' => 'cart',
-], function () {
-    Route::get('/', [PostController::class, 'index']);
-    Route::group([
-        'middleware' => ['api', ''],
-    ], function () {
-        Route::get('/', [PostController::class, 'index']);
-        Route::get('/checklogin', function() {
-            $admin = auth('ad')->user();
-            return response()->json($admin, 200);
-        });
-        // Route::get
 
-    });
-});
 
 
 // Post Route
@@ -164,6 +150,38 @@ Route::group([
     });
 });
 
+
+
+// Cart Route
+Route::group([
+    'prefix' => 'cart',
+], function () {
+    // Route::get('/', function() {
+    //     return response()->json(['message' => 'cart'], 200);
+    // });
+    Route::group([
+        'middleware' => ['auth:api'],
+    ], function () {
+        Route::get('/', [CartController::class, 'index']);
+        Route::get('/add-item/{id}', [CartController::class, 'addCart']);
+        // Route::get
+        
+    });
+});
 Route::get('form', function() {
     return view('form');
+});
+
+Route::get('view-post/{id}', function ($id, PostDTO $postDTO)
+{
+    //
+    $data = Post::where('id', $id)->first();
+    $data = $postDTO->postsDetail($data);
+    // dd($data);
+    return view('edit', $data);
+});
+Route::get('course', function() {
+    $courses = DB::table('courses')->select('*')->limit(5)->get(5);
+    // dd($course);
+    return view('course', compact('courses'));
 });

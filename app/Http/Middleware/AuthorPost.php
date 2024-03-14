@@ -16,6 +16,9 @@ class AuthorPost
      */
     public function handle(Request $request, Closure $next): Response
     {
+        
+        // return $next($request);
+// Xem lai
         $fullUrl = $request->url();
         $parsedUrl = parse_url($fullUrl);
         $baseURL = "{$parsedUrl['scheme']}://{$parsedUrl['host']}/new/api/post/";

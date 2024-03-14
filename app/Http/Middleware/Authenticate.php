@@ -19,7 +19,9 @@ class Authenticate extends Middleware
     // handle
     public function handle($request, Closure $next, ...$guards)
     {
-        if (request()->hasCookie('user')) {
+        // $user = JWTAuth::parseToken()->authenticate();
+        // if (request()->hasCookie('user')) {
+        if ($token = $request->bearerToken()) {
             $request->headers->set('X-Requested-With', 'XMLHttpRequest');
             $cookieValue = json_decode(request()->cookie('user'), true);
             $token = array_get($cookieValue, 'access_token');
