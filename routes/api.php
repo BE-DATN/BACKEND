@@ -80,7 +80,7 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
