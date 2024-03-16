@@ -31,11 +31,16 @@ class CartController extends Controller
     {
         $cart = $this->getCart();
         // $items = $cart->cartDetails;
-        // dd();
+        // dd($cart);
         $courses = [];
+        // dd($cart->cartDetails);
         foreach ($cart->cartDetails as $cart) {
+            // dd($cart->course_id);
             $data = Course::find($cart->course_id);
-            array_push($courses, $courseDTO->courseDetail($data));
+            // dd($data);
+            if ($data) {
+                array_push($courses, $courseDTO->courseDetail($data));
+            }
         }
         $data = [
             'status' => "ok",
@@ -68,7 +73,8 @@ class CartController extends Controller
 
 
     //
-    public function getCart() {
+    public function getCart()
+    {
         $this->cart = Cart::select('*')->where('user_id', array_get($this->user, 'id'))->first();
         // dd($this->cart);
         if (!$this->cart) {
@@ -78,24 +84,30 @@ class CartController extends Controller
         }
         return $this->cart;
     }
-    public function deleteCart($id) {
+    public function deleteCart($id)
+    {
         try {
-            if ($this->getCart()->cartDetails->where('course_id', $id)->first()->delete()) {
+            $item = $this->getCart()->cartDetails->where('course_id', $id)->first();
+            if ($item) {
+                $item->delete();
                 return response()->json(['message' => 'Sản phẩm đã được xóa khỏi giỏ hàng'], 200);
+            } else {
+                return response()->json(['message' => 'Sản phẩm không tồn tại trong giỏ hàng'], 200);
             };
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json([
                 'message' => 'Có lỗi xẩy ra khi xóa sản phẩm này khỏi giỏ hàng',
-                'error' =>$th->getMessage()
+                'error' => $th->getMessage()
             ], 200);
         }
     }
-    public function remoteCart() {
+    public function remoteCart()
+    {
         try {
             $cart = $this->getCart();
             DB::table('cart_details')->select('*')
-            ->where('cart_id', $cart->id)->delete();
+                ->where('cart_id', $cart->id)->delete();
             // dd( $cart->cartDetails->where('cart_id', $cart->id));
             // $cart->cartDetails->where('cart_id', $cart->id)->delete();
             $cart->delete();
@@ -104,7 +116,7 @@ class CartController extends Controller
             //throw $th;
             return response()->json([
                 'message' => 'Có lỗi xẩy ra khi xóa sản phẩm trong giỏ hàng',
-                'error' =>$th->getMessage()
+                'error' => $th->getMessage()
             ], 200);
         }
     }

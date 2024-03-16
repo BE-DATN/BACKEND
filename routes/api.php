@@ -156,6 +156,8 @@ Route::group([
         'middleware' => ['auth'],
     ], function () {
         Route::get('/pay', [OrderController::class, 'order']);
+        Route::get('/result', [OrderController::class, 'result']);
+        Route::get('/apn', [OrderController::class, 'apn']);
     });
 });
 

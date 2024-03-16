@@ -18,4 +18,13 @@ class Course extends Model
         'thumbnail',
         'video_demo_url'
     ];
+    public function cartDetails()
+    {
+        return $this->hasMany(Cart_Detail::class);
+    }
+
+    public function orderDetails()
+    {
+        return $this->hasMany(Cart_Detail::class);
+    }
 }
