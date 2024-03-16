@@ -16,24 +16,8 @@ class ActionOwned
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $fullUrl = $request->url();
-        $parsedUrl = parse_url($fullUrl);
-        $baseURL = "{$parsedUrl['scheme']}://{$parsedUrl['host']}/new/api/post/";
-        $trimmedPath = str_replace($baseURL, '', $fullUrl);
-        $action = explode('/', $trimmedPath)[0];
-
-        switch ($action) {
-            case 'edit':
-                $action = 'chỉnh sửa';
-                break;
-            default:
-                'delete';
-                $action = 'xóa';
-                break;
-        }
-
-
         // Tác giả || admin cho qua sửa || xóa
+        return $next($request);
         $user = getCurrentUser();
         $user = User::find(array_get($user, 'id'));
         $input = $user->profile->roles->toArray();
@@ -46,12 +30,13 @@ class ActionOwned
         }
 
         if (array_get($user, 'id') == $request->route()->parameter('id')) {
+            return response()->json(['actionOwned'], 403);
             return $next($request);
         }
 
         $message = [
             'status' => false,
-            'message' => "Chỉ có tác giả và admin mới có thể {$action} bài viết này."
+            'message' => "Chỉ có tác giả và Admin mới có thể thực hiện thao tác này."
         ];
         return response()->json($message, 403);
     }

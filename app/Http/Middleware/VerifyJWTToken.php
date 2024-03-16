@@ -21,7 +21,7 @@ class VerifyJWTToken
      */
     public function handle(Request $request, Closure $next): Response
     {
-
+        dd('verify token');
         // $token = null;
         $cookieValue = null;
         if (request()->hasCookie('user')) {

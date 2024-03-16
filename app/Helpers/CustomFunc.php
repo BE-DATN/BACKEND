@@ -32,37 +32,51 @@ if (!function_exists('getCurrentUser')) {
     function getCurrentUser()
     {
         $request = new Request();
-        $user = $request->bearerToken();
-        $user = JWTAuth::parseToken()->authenticate();
-        // $user = array_get(getCookie(), 'data');
+        $user = null;
+        if ($request->bearerToken()) {
+            $user = JWTAuth::parseToken()->authenticate();
+        }
+        if (getCookie()) {
+           $user = getCookie()['data'];
+        }
         return $user;
     }
 }
 if (!function_exists('checkAcccess')) {
     function checkAcccess(array $arrAccess, $input, $keyCheck)
     {
-        // dd($input[0]->permissions);
-        foreach ($input as $role) {
-            // dd($role->$keyCheck);
-            $roleName = strtoupper($role->$keyCheck);
-            if ($roleName == "ADMIN") {
+        foreach ($input as $value) {
+            if ($value->name == 'ADMIN') {
                 return true;
             }
             foreach ($arrAccess as $access) {
-                // dd($role->permissions);
-                foreach ($role->permissions as $key => $value) {
-                    /***
-                     * Post ? $access='Author_Post'
-                     * Course ? $access='Author_Course'
-                     * 
-                     * $value->name = permission_name (ex: Author_Post)
-                     */
-                    if (strtoupper($access) == strtoupper($value->name)) {
-                        return true;
-                    }
+                if (strtoupper($access) == strtoupper($value->name)) {
+                    // return response()->json($value->name, 200);
+                    return true;
                 }
             }
         }
+        // foreach ($input as $role) {
+        //     // dd($role->$keyCheck);
+        //     $roleName = strtoupper($role->$keyCheck);
+        //     if ($roleName == "ADMIN") {
+        //         return true;
+        //     }
+        //     foreach ($arrAccess as $access) {
+        //         // dd($role->permissions);
+        //         foreach ($role->permissions as $key => $value) {
+        //             /***
+        //              * Post ? $access='Author_Post'
+        //              * Course ? $access='Author_Course'
+        //              *
+        //              * $value->name = permission_name (ex: Author_Post)
+        //              */
+        //             if (strtoupper($access) == strtoupper($value->name)) {
+        //                 return true;
+        //             }
+        //         }
+        //     }
+        // }
         return false;
     }
 }

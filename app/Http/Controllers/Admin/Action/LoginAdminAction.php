@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Account\Action;
+namespace App\Http\Controllers\Admin\Action;
 
 use App\DTO\User\UserDTO;
 use App\Models\User;
@@ -11,17 +11,18 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 // use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
-class LoginUserAction
+class LoginAdminAction
 {
     protected $token = null;
     protected $cookie = null;
     public function login($credentials)
     {
-        return $this->token = auth('api')->attempt($credentials);
+        return $this->token = auth('ad')->attempt($credentials);
     }
 
     public function setTokenLifeTime($remember_me = false)
     {
+
         if ($remember_me) {
             JWTAuth::factory()->setTTL(env('JWT_REMEMBER_TTL'));
         } else {
@@ -61,7 +62,7 @@ class LoginUserAction
 
     public function getUserLogin()
     {
-        return Auth::user();
+        return Auth::guard('ad')->user();
     }
 
     public function tranferLoginData($user)

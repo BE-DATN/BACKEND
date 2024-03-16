@@ -1,6 +1,8 @@
 <?php
 
 use App\DTO\Post\PostDTO;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
@@ -23,24 +25,6 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 Route::get('/', function () {
-    // $data = [
-    //     [
-    //         'id' => 1,
-    //         'name' => 'John Doe',
-    //         'age'  => 32,
-    //     ],
-    //     [
-    //         'id' => 2,
-    //         'name' => 'Jane Smith',
-    //         'age' => 45
-    //     ],
-    //     [
-    //         'id' => 3,
-    //         'name' => 'George Johnson',
-    //         'age' => 60
-    //     ]
-    // ];
-    // return response()->json($data, 200);
     return response()->json([
         "Project" => env('APP_NAME'),
         "Status" => "ok!",
@@ -80,11 +64,11 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
-        'middleware' => ['api'], //, 'jwt.auth',
+        'middleware' => ['auth'], //, 'jwt.auth',
     ], function () {
         Route::get('refresh', [AccountController::class, 'refresh']);
         Route::get('me', [AccountController::class, 'me']);
@@ -92,9 +76,6 @@ Route::group([
     });
 
 });
-
-
-
 
 
 // Post Route
@@ -105,7 +86,7 @@ Route::group([
     Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id');
 
     Route::group([
-        'middleware' => ['api', 'post.auth'],
+        'middleware' => ['auth', 'author.auth'],
     ], function () {
         Route::get('/list-owned-posts/{userId?}', [PostController::class, 'list'])->whereNumber('userId');
         Route::post('/create', [PostController::class, 'store']);
@@ -115,33 +96,34 @@ Route::group([
     });
 });
 
-
-
 // Course Route
-// Route::group([
-    //     'prefix' => 'course',
-    // ], function () {
-        //     Route::get('/', [PostController::class, 'index']);
-        //     Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id');
-        
-        //     Route::group([
-//         'middleware' => ['api', 'post.auth'],
-//     ], function () {
-//         Route::get('/list-owned-courses/{userId}', [PostController::class, 'list'])->whereNumber('userId');
-//         Route::get('/create', [PostController::class, 'store'])->name('post.create');
-//         Route::get('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->name('post.edit')->middleware('action.auth');
-//         Route::get('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->name('post.delete')->middleware('action.auth');
-//     });
-// });
+Route::group([
+    'prefix' => 'course',
+], function () {
+    Route::get('/', [CourseController::class, 'index']);
+    Route::get('/{id}', [CourseController::class, 'show'])->whereNumber('id');
+
+    Route::group([
+        'middleware' => ['auth', 'author.auth'],
+    ], function () {
+        // Route::get('/list-owned-posts/{userId?}', [CourseController::class, 'list'])->whereNumber('userId');
+        Route::post('/create', [CourseController::class, 'store']);
+
+        Route::post('/edit/{id}', [CourseController::class, 'update'])->whereNumber('id');//->middleware('action.auth')
+        Route::post('/delete/{id}', [CourseController::class, 'destroy'])->whereNumber('id');//->middleware('action.auth')
+    });
+});
 
 // Admin Route
 Route::group([
     'prefix' => 'admin',
 ], function () {
+    Route::post('login', [AdminController::class, 'login']);
+
     Route::group([
-        'middleware' => ['api', 'admin.auth'],
+        'middleware' => ['auth:ad', 'admin.auth', 'author.auth'],
     ], function () {
-        Route::get('/', [PostController::class, 'index']);
+        Route::get('/', [AdminController::class, 'index']);
         Route::get('/checklogin', function() {
             $admin = auth('ad')->user();
             return response()->json($admin, 200);
@@ -152,22 +134,20 @@ Route::group([
 
 
 
-// Cart Route
+// Route Cart
 Route::group([
     'prefix' => 'cart',
 ], function () {
-    // Route::get('/', function() {
-    //     return response()->json(['message' => 'cart'], 200);
-    // });
     Route::group([
-        'middleware' => ['auth:api'],
+        'middleware' => ['auth'],
     ], function () {
         Route::get('/', [CartController::class, 'index']);
+        Route::get('/remove-cart', [CartController::class, 'remoteCart']);
         Route::get('/add-item/{id}', [CartController::class, 'addCart']);
-        // Route::get
-        
+        Route::get('/delete-item/{id}', [CartController::class, 'deleteCart']);
     });
 });
+
 Route::get('form', function() {
     return view('form');
 });

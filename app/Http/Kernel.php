@@ -65,10 +65,10 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        // 
+        //
         'jwt.auth' => \App\Http\Middleware\VerifyJWTToken::class,
-        'post.auth' => \App\Http\Middleware\AuthorPost::class,
-        'course.auth' => \App\Http\Middleware\AuthorCourse::class,
+        'author.auth' => \App\Http\Middleware\Author::class,
+        // 'course.auth' => \App\Http\Middleware\AuthorCourse::class,
         'action.auth' => \App\Http\Middleware\ActionOwned::class,
         'admin.auth' => \App\Http\Middleware\Dashboard::class,
         // 'teacher' => \App\Http\Middleware\TeacherMiddleware::class,

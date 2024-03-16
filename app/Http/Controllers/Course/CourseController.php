@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Post;
+namespace App\Http\Controllers\Course;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Post\Action\PostAction;
+use App\Http\Controllers\Course\Action\CourseAction;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller
@@ -11,22 +11,14 @@ class CourseController extends Controller
     /**
      * Trang có tất cả bài viết người dùng có thể xem
      */
-    public function index(PostAction $postAction)
+    public function index(CourseAction $courseAction)
     {
-        $posts = $postAction->search();
+        $posts = $courseAction->search();
         $data = [
-            'title' => 'Danh sách bài viết',
+            'title' => 'Danh sách khóa học',
             'posts' => $posts,
         ];
         return response()->json($data, 200);
-    }
-
-    /**
-     * Show trang có form tạo vài viết
-     */
-    public function create()
-    {
-        return response()->json(['page' => 'create-posts'], 201);
     }
 
     /**
@@ -43,7 +35,38 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        return response()->json(['action' => 'create-posts']);
+        try {
+            // dd('create course');
+
+            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+            $video_demo_name = 'video_' . uniqid() . '_.' . $request->file('video_demo_url')->extension();
+            // return response()->json([$imageName]);
+
+            // return response()->json($request->input());
+            // dd($request->input());
+
+            $request->file('thumbnail')->move(public_path('file/uploads/posts/'), $imageName);
+            $request->file('video_demo_url')->move(public_path('file/uploads/course/'), $imageName);
+
+            $user = getCurrentUser();
+            $request->request->add(['created_by' => array_get($user, 'id')]);
+            $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
+            // dd($request->input());
+            // dd($request->input());
+            $post = Post::create($request->input());
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Bài viết đã được tạo thành công',
+                'post' => $post
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Có xẩy ra lỗi khi tạo bài viết',
+                'error' => $th->getMessage()
+            ]);
+        }
     }
 
     /**
@@ -56,7 +79,7 @@ class CourseController extends Controller
     }
 
     /**
-     * Delete bài viết theo id 
+     * Delete bài viết theo id
      */
     public function destroy(string $id) //id bài viết
     {

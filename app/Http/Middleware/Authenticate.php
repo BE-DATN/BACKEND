@@ -19,17 +19,17 @@ class Authenticate extends Middleware
     // handle
     public function handle($request, Closure $next, ...$guards)
     {
-        // $user = JWTAuth::parseToken()->authenticate();
+        // dd('authenticate');
         // if (request()->hasCookie('user')) {
-        if ($token = $request->bearerToken()) {
+        if (request()->hasCookie('user')) {
             $request->headers->set('X-Requested-With', 'XMLHttpRequest');
             $cookieValue = json_decode(request()->cookie('user'), true);
             $token = array_get($cookieValue, 'access_token');
             $request->headers->set('Authorization', 'Bearer ' . $token);
         }
         // dd($request->headers);
+        // return response()->json($request->bearerToken(), 200);
         $this->authenticate($request, $guards);
-        // dd('roi');
         return $next($request);
     }
 }

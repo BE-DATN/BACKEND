@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Post\Action;
+namespace App\Http\Controllers\Course\Action;
 
-use App\Models\Post;
+use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class PostAction
+class CourseAction
 {
     protected $request;
     public function __construct(Request $request)

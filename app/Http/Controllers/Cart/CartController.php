@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Cart;
 
+use App\Http\Resources\CourseResource;
 use App\Http\Controllers\Cart\Action\CartAction;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
+use App\Models\Course;
 use App\Models\Cart_Detail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+
+use App\DTO\Course\CourseDTO;
+
 
 use function Laravel\Prompts\select;
 
@@ -22,13 +27,20 @@ class CartController extends Controller
     {
         $this->user = getCurrentUser();
     }
-    public function index()
+    public function index(CourseDTO $courseDTO)
     {
-        $this->getCart();
-        $items = 0;
+        $cart = $this->getCart();
+        // $items = $cart->cartDetails;
+        // dd();
+        $courses = [];
+        foreach ($cart->cartDetails as $cart) {
+            $data = Course::find($cart->course_id);
+            array_push($courses, $courseDTO->courseDetail($data));
+        }
         $data = [
             'status' => "ok",
-            'data' => $items
+            'courses' => $courses,
+            // 'item' => $items
         ];
         return response()->json($data, 200);
     }
@@ -36,8 +48,7 @@ class CartController extends Controller
     {
         try {
             array_get($this->user, 'id');
-            $cart = $this->getCart();  
-            // dd($course_id);  
+            $cart = $this->getCart();
             $cartAction->addCartDetail($cart, $course_id);
             $message = [
                 'status' => true,
@@ -45,7 +56,6 @@ class CartController extends Controller
             ];
             return response()->json($message, 200);
         } catch (\Throwable $th) {
-            //throw $th;
             $message = [
                 'status' => false,
                 'message' => "Không thể thêm sản phẩm này vào giỏ hàng",
@@ -54,10 +64,10 @@ class CartController extends Controller
             return response()->json($message, 500);
         }
     }
-    
-    
 
-    // 
+
+
+    //
     public function getCart() {
         $this->cart = Cart::select('*')->where('user_id', array_get($this->user, 'id'))->first();
         // dd($this->cart);
@@ -67,5 +77,35 @@ class CartController extends Controller
             ]);
         }
         return $this->cart;
+    }
+    public function deleteCart($id) {
+        try {
+            if ($this->getCart()->cartDetails->where('course_id', $id)->first()->delete()) {
+                return response()->json(['message' => 'Sản phẩm đã được xóa khỏi giỏ hàng'], 200);
+            };
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'message' => 'Có lỗi xẩy ra khi xóa sản phẩm này khỏi giỏ hàng',
+                'error' =>$th->getMessage()
+            ], 200);
+        }
+    }
+    public function remoteCart() {
+        try {
+            $cart = $this->getCart();
+            DB::table('cart_details')->select('*')
+            ->where('cart_id', $cart->id)->delete();
+            // dd( $cart->cartDetails->where('cart_id', $cart->id));
+            // $cart->cartDetails->where('cart_id', $cart->id)->delete();
+            $cart->delete();
+            return response()->json(['message' => 'Giỏ hàng đã được xóa'], 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'message' => 'Có lỗi xẩy ra khi xóa sản phẩm trong giỏ hàng',
+                'error' =>$th->getMessage()
+            ], 200);
+        }
     }
 }
