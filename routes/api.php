@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Course\CourseController;
 use App\Http\Controllers\Post\PostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -107,3 +108,13 @@ Route::group([
 //         Route::get('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->name('post.delete')->middleware('action.auth');
 //     });
 // });
+// routes/api.php
+
+//course
+Route::group(['prefix' => 'courses'], function () {
+    Route::post('/create', [CourseController::class, 'create'])->name('course.create');
+    Route::get('/show/{id}', [CourseController::class, 'show'])->name('course.show');
+    Route::put('/update/{id}', [CourseController::class, 'update'])->name('course.update');
+    Route::delete('/delete/{id}', [CourseController::class, 'delete'])->name('course.delete');
+    Route::get('/search', [CourseController::class, 'search'])->name('course.search');
+});
