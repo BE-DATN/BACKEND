@@ -4,6 +4,7 @@ use App\DTO\Post\PostDTO;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
 use App\Models\Post;
@@ -145,6 +146,16 @@ Route::group([
         Route::get('/remove-cart', [CartController::class, 'remoteCart']);
         Route::get('/add-item/{id}', [CartController::class, 'addCart']);
         Route::get('/delete-item/{id}', [CartController::class, 'deleteCart']);
+    });
+});
+// Route Cart
+Route::group([
+    'prefix' => 'order',
+], function () {
+    Route::group([
+        'middleware' => ['auth'],
+    ], function () {
+        Route::get('/pay', [OrderController::class, 'order']);
     });
 });
 
