@@ -176,10 +176,7 @@ class CourseController extends Controller
         //
         $courseDTO = new CourseDTO();
         try {
-            $request->validate([
-                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
-                'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
-            ]);
+           
             $valid = Validator::make($request->input(), [
                 'name' => 'max:500',
                 'status' => 'required',
@@ -203,6 +200,10 @@ class CourseController extends Controller
             // return response()->json($course, 200);
             // Xóa ảnh thumbnail cũ
             if ($request->hasFile('thumbnail')) {
+                $request->validate([
+                    'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
+                    // 'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+                ]);
                 if (File::exists($course->thumbnail)) {
                     File::delete($course->thumbnail);
                 }
@@ -214,6 +215,10 @@ class CourseController extends Controller
             }
             // Xóa ảnh thumbnail cũ
             if ($request->hasFile('video_demo_url')) {
+                $request->validate([
+                    // 'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
+                    'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+                ]);
                 if (File::exists($course->video_demo_url)) {
                     File::delete($course->video_demo_url);
                 }
