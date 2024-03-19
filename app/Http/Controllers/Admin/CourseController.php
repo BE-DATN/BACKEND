@@ -197,34 +197,37 @@ class CourseController extends Controller
                     'message' => 'Không tìm thấy khóa học này.',
                 ]);
             }
-            // return response()->json($course, 200);
-            // Xóa ảnh thumbnail cũ
+
             if ($request->hasFile('thumbnail')) {
                 $request->validate([
-                    'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
-                    // 'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+                    'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg',
                 ]);
+                // Xóa ảnh thumbnail cũ
                 if (File::exists($course->thumbnail)) {
                     File::delete($course->thumbnail);
                 }
+                // return response()->json('thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension());
                 $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
                 $request->thumbnail->move(public_path('file/uploads/courses/thumbnails/'), $imageName);
                 $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
             } else {
                 $request->request->remove('thumbnail');
             }
-            // Xóa ảnh thumbnail cũ
+
             if ($request->hasFile('video_demo_url')) {
                 $request->validate([
-                    // 'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
-                    'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+                    'video_demo_url' => 'mimes:mp4,mov,ogg,qt',
                 ]);
+                // Xóa ảnh video_demo cũ
+                
                 if (File::exists($course->video_demo_url)) {
                     File::delete($course->video_demo_url);
+                    // return response()->json(["file/uploads/courses/videos/$imageName"], 200);
+                    $imageName = 'video' . uniqid() . '_.' . $request->video_demo_url->extension();
+                    $request->video_demo_url->move(public_path('file/uploads/courses/videos/'), $imageName);
+                    $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$imageName"]);
                 }
-                $imageName = 'video' . uniqid() . '_.' . $request->thumbnail->extension();
-                $request->thumbnail->move(public_path('file/uploads/courses/videos/'), $imageName);
-                $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$imageName"]);
+                // return response()->json($request->input('video_demo_url'), 200);
             } else {
                 $request->request->remove('video_demo_url');
             }

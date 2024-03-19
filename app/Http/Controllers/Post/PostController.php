@@ -56,7 +56,7 @@ class PostController extends Controller
                 'content' => 'required',
             ]);
             $img = $request->validate([
-                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
+                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', 
             ]);
 
             if ($input->fails()) {
@@ -105,12 +105,13 @@ class PostController extends Controller
                     'message' => 'Không tìm thấy bài viết này.',
                 ]);
             }
-            // Xóa ảnh thumbnail cũ
-            $img = $request->validate([
-                'thumbnail' => 'image|mimes:jpeg,png,jpg,gif', // max:2048 means max file size is 2MB
-            ]);
-
+            
+            
             if ($request->hasFile('thumbnail')) {
+                $img = $request->validate([
+                    'thumbnail' => 'image|mimes:jpeg,png,jpg,gif', 
+                ]);
+                // Xóa ảnh thumbnail cũ
                 if (File::exists($post->thumbnail)) {
                     File::delete($post->thumbnail);
                 }
