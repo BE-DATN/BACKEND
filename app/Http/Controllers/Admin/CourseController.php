@@ -31,13 +31,14 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
+        $courseDTO = new CourseDTO();
         try {
             $request->validate([
                 'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
                 'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
             ]);
             $valid = Validator::make($request->input(), [
-                'name' => 'required||max:500',
+                'name' => 'required|max:500',
                 'status' => 'required',
                 'price' => 'required|numeric|between:0,99999999999.99',
             ]);
@@ -74,7 +75,7 @@ class CourseController extends Controller
             return response()->json([
                 'status' => true,
                 'message' => 'Khóa học đã được tạo thành công',
-                'course' => $course
+                'course' => $courseDTO->courseDetail($course)
             ]);
         } catch (\Throwable $th) {
             return response()->json([
@@ -152,9 +153,19 @@ class CourseController extends Controller
     public function show($id, CourseDTO $courseDTO)
     {
         //
-        $data = Course::where('id', $id)->first();
-        // $data = $courseDTO->courseDetail($data);
-        return response()->json($data, 200);
+        $data = Course::find($id);
+        if ($data) {
+            $data = $courseDTO->courseDetail($data);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy khóa học này',
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'data' => $data,
+        ], 200);
     }
 
     /**
@@ -163,8 +174,26 @@ class CourseController extends Controller
     public function update(Request $request, string $id) //id bài viết
     {
         //
+        $courseDTO = new CourseDTO();
         try {
-            $course = Course::findOrFail($id);
+            $request->validate([
+                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
+                'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+            ]);
+            $valid = Validator::make($request->input(), [
+                'name' => 'max:500',
+                'status' => 'required',
+                'price' => 'numeric|between:0,99999999999.99',
+            ]);
+            if ($valid->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $valid->errors()
+                ], 404);
+                die;
+            }
+
+            $course = Course::find($id);
             if ($course == null) {
                 return response()->json([
                     'status' => false,
@@ -174,42 +203,32 @@ class CourseController extends Controller
             // return response()->json($course, 200);
             // Xóa ảnh thumbnail cũ
             if ($request->hasFile('thumbnail')) {
-                // $request->validate([
-                //     'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-                // ]);
                 if (File::exists($course->thumbnail)) {
-                    if (File::delete($course->thumbnail)) {
-                        $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
-                        $request->thumbnail->move(public_path('file/uploads/courses/thumbnails/'), $imageName);
-                        $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
-                    };
+                    File::delete($course->thumbnail);
                 }
+                $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
+                $request->thumbnail->move(public_path('file/uploads/courses/thumbnails/'), $imageName);
+                $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
             } else {
                 $request->request->remove('thumbnail');
             }
             // Xóa ảnh thumbnail cũ
             if ($request->hasFile('video_demo_url')) {
-                // $request->validate([
-                //     'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-                // ]);
-                // dd($request->input());
-                if (File::exists($course->thumbnail)) {
-                    if (File::delete($course->thumbnail)) {
-                        $imageName = 'video' . uniqid() . '_.' . $request->thumbnail->extension();
-                        $request->thumbnail->move(public_path('file/uploads/courses/videos/'), $imageName);
-                        $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$imageName"]);
-                    };
+                if (File::exists($course->video_demo_url)) {
+                    File::delete($course->video_demo_url);
                 }
+                $imageName = 'video' . uniqid() . '_.' . $request->thumbnail->extension();
+                $request->thumbnail->move(public_path('file/uploads/courses/videos/'), $imageName);
+                $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$imageName"]);
             } else {
                 $request->request->remove('video_demo_url');
             }
-            // return response()->json(removeNullOrEmptyString($request->input()), 200);
-            $course->update($request->input());
 
+            $course->update($request->input());
             return response()->json([
                 'status' => true,
                 'message' => 'Khóa học đã được cập nhật.',
-                'post' => $course
+                'course' => $courseDTO->courseDetail($course)
             ]);
         } catch (\Throwable $th) {
             return response()->json([
