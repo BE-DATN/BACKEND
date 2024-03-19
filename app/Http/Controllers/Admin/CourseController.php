@@ -13,6 +13,7 @@ use App\Models\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class CourseController extends Controller
 {
@@ -31,23 +32,49 @@ class CourseController extends Controller
     public function store(Request $request)
     {
         try {
-            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
-            $video_demo_name = 'video_' . uniqid() . '_.' . $request->file('video_demo_url')->extension();
+            $request->validate([
+                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
+                'video_demo_url' => 'file|mimes:mp4,mov,ogg,qt', // max:2048 means max file size is 2MB
+            ]);
+            $valid = Validator::make($request->input(), [
+                'name' => 'required||max:500',
+                'status' => 'required',
+                'price' => 'required|numeric|between:0,99999999999.99',
+            ]);
+            if ($valid->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $valid->errors()
+                ], 404);
+                die;
+            }
 
-            $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
-            $request->file('video_demo_url')->move(public_path('file/uploads/courses/videos'), $video_demo_name);
+            $input = $request->input();
+
+            if ($request->hasFile('thumbnail')) {
+                $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+                $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
+                $input['thumbnail'] = "file/uploads/courses/thumbnails/$imageName";
+            }
+            if ($request->hasFile('video_demo_url')) {
+                $video_demo_name = 'video_' . uniqid() . '_.' . $request->file('video_demo_url')->extension();
+                $request->file('video_demo_url')->move(public_path('file/uploads/courses/videos'), $video_demo_name);
+                $input['video_demo_url'] = "file/uploads/courses/videos/$video_demo_name";
+            }
 
             $user = getCurrentUser();
-            $request->request->add(['created_by' => array_get($user, 'id')]);
-            $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
-            $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$video_demo_name"]);
+            $input['created_by'] = array_get($user, 'id');
+            // $request->request->add(['created_by' => array_get($user, 'id')]);
+            // $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
+            // $request->request->add(['video_demo_url' => "file/uploads/courses/videos/$video_demo_name"]);
 
-            $course = Course::create($request->input());
+            // $course = Course::create($request->input());
+            $course = Course::create($input);
 
             return response()->json([
                 'status' => true,
                 'message' => 'Khóa học đã được tạo thành công',
-                'post' => $course
+                'course' => $course
             ]);
         } catch (\Throwable $th) {
             return response()->json([
