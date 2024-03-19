@@ -52,9 +52,12 @@ class PostController extends Controller
         try {
             $input = Validator::make($request->input(), [
                 'title' => 'required||max:500',
-                'thumbnail' => 'image|mimes:jpg,png,jpeg,gif,svg',
+                // 'thumbnail' => 'image|mimes:jpg,png,jpeg,gif,svg',
                 'status' => 'required',
                 'content' => 'required',
+            ]);
+            $img = $request->validate([
+                'thumbnail' => 'image|mimes:jpeg,png,jpg,gif,svg', // max:2048 means max file size is 2MB
             ]);
 
             if ($input->fails()) {
