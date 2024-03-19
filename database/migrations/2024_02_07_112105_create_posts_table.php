@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('created_by');
-            $table->string('title', );
-            $table->text('content', );
-            $table->string('thumbnail')->nullable();
+            $table->string('title', 500);
+            $table->text('content');
+            $table->string('thumbnail', 500)->nullable();
             $table->integer('likes')->default(0);
             $table->integer('views')->default(0);
             $table->tinyInteger('status')->default(1);

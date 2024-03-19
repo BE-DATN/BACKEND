@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers\Account\Action;
 
-use App\DTO\User\UserDTO;
-use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Tymon\JWTAuth\Facades\JWTAuth;

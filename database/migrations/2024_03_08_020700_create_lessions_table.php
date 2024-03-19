@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('session_id');
             $table->string('name');
+            $table->tinyInteger('arrange');
             $table->boolean('learned')->default(false);
             $table->string('video_url', 500);
             $table->timestamps();

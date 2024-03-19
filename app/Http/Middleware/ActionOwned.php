@@ -17,7 +17,7 @@ class ActionOwned
     public function handle(Request $request, Closure $next): Response
     {
         // Tác giả || admin cho qua sửa || xóa
-        return $next($request);
+        // return $next($request);
         $user = getCurrentUser();
         $user = User::find(array_get($user, 'id'));
         $input = $user->profile->roles->toArray();

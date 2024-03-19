@@ -7,6 +7,10 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Course;
 use App\DTO\Course\CourseDTO;
+use App\Http\Controllers\Admin\Action\CourseAction;
+use App\Models\lession;
+use App\Models\Session;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
@@ -15,9 +19,10 @@ class CourseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(CourseAction $courseAction)
     {
-        //
+        $courses = $courseAction->search();
+        return response()->json($courses, 200);
     }
 
     /**
@@ -53,6 +58,67 @@ class CourseController extends Controller
         }
     }
 
+    public function addSession($course_id)
+    {
+        $request = new Request();
+        try {
+            $request->validate([
+                'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max:2048 means max file size is 2MB
+            ]);
+            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+            $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
+            $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
+            $session = Session::insert([
+                'course_id' => $course_id,
+                'name' => $request->input('name'),
+                'description' => $request->input('description'),
+                'arrange' => $request->input('arrange'),  
+                'thumbnail' => $request->input('name'),
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Session đã được thêm vào khóa học.',
+                'Session' => $session
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Có xẩy ra lỗi khi tạo session này hãy thử lại sau.',
+                'error' => $th->getMessage(),
+            ]);
+        }
+    }
+    public function addLession($session_id)
+    {
+        $request = new Request();
+        try {
+            $request->validate([
+                'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max:2048 means max file size is 2MB
+            ]);
+            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+            $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
+            $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
+
+            $lession = lession::insert([
+                'course_id' => $session_id,
+                'name' => $request->input('name'),
+                'description' => $request->input('description'),
+                'arrange' => $request->input('arrange'),  
+                'thumbnail' => $request->input('name'),
+            ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Lession đã được thêm vào khóa học.',
+                'Session' => $lession
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Có xẩy ra lỗi khi tạo lession này hãy thử lại sau.',
+                'error' => $th->getMessage(),
+            ]);
+        }
+    }
     /**
      * Display the specified resource.
      */
@@ -64,7 +130,7 @@ class CourseController extends Controller
         return response()->json($data, 200);
     }
 
-   /**
+    /**
      * Submit dữ liệu từ form edit post vào đây
      */
     public function update(Request $request, string $id) //id bài viết
@@ -127,7 +193,7 @@ class CourseController extends Controller
         }
     }
 
-     /**
+    /**
      * Trang có tất cả khoá học đã tạo của Teacher||Admin
      */
 

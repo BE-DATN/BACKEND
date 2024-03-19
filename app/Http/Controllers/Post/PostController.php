@@ -10,7 +10,7 @@ use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PostController extends Controller
 {
@@ -50,27 +50,35 @@ class PostController extends Controller
     public function store(Request $request)
     {
         try {
-
-            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
-            // return response()->json([$imageName]); 
-
-            // return response()->json($request->input()); 
-            // dd($request->input());
-
-            $request->file('thumbnail')->move(public_path('file/uploads/posts/'), $imageName);
-
-            $user = getCurrentUser();
-            $request->request->add(['created_by' => array_get($user, 'id')]);
-            $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
-            // dd($request->input());
-            // dd($request->input());
-            $post = Post::create($request->input());
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Bài viết đã được tạo thành công',
-                'post' => $post
+            $input = Validator::make($request->input(), [
+                'title' => 'required||max:500',
+                'thumbnail' => 'image|mimes:jpg,png,jpeg,gif,svg',
+                'status' => 'required',
+                'content' => 'required',
             ]);
+
+            if ($input->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $input->errors()
+                ], 404);
+                die;
+            } else {
+                if ($request->hasFile('thumbnail')) {
+                    $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
+                    $request->file('thumbnail')->move(public_path('file/uploads/posts/'), $imageName);
+                    $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
+                }
+                $user = getCurrentUser();
+                $request->request->add(['created_by' => array_get($user, 'id')]);
+
+                $post = Post::create($request->input());
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Bài viết đã được tạo thành công',
+                    'post' => $post
+                ]);
+            }
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -87,30 +95,31 @@ class PostController extends Controller
     {
         //
         try {
-            $post = Post::findOrFail($id);
+            $input = removeNullOrEmptyString($request->input());
+            $post = Post::find($id);
             if ($post == null) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Không tìm thấy bài viết này.',
                 ]);
             }
-
             // Xóa ảnh thumbnail cũ
-            if ($request->hasFile('thumbnail')) {
-                $request->validate([
-                    'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-                ]);
-                // dd($request->input());
-                if (File::exists($post->thumbnail)) {
-                    if (File::delete($post->thumbnail)) {
-                        $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
-                        $request->thumbnail->move(public_path('file/uploads/posts/'), $imageName);
-                        $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
-                    };
-                }
-            }
+            $img = $request->validate([
+                'thumbnail' => 'image|mimes:jpeg,png,jpg,gif', // max:2048 means max file size is 2MB
+            ]);
 
-            $post->update($request->input());
+            if ($request->hasFile('thumbnail')) {
+                if (File::exists($post->thumbnail)) {
+                    File::delete($post->thumbnail);
+                }
+                $imageName = 'thumbnail_' . uniqid() . '_.' . $request->thumbnail->extension();
+                $request->thumbnail->move(public_path('file/uploads/posts/'), $imageName);
+                // $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
+                $input['thumbnail'] = "file/uploads/posts/$imageName";
+            }
+            
+            // $post->update($request->input());
+            $post->update($input);
 
             return response()->json([
                 'status' => true,
@@ -152,10 +161,21 @@ class PostController extends Controller
     public function show($id, PostDTO $postDTO)
     {
         //
-        $data = Post::where('id', $id)->first();
-        $data = $postDTO->postsDetail($data);
+        $post = Post::find($id);
+        if (!$post) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy bài viết này.',
+            ]);
+        }
+        if ($post) {
+            $post = $postDTO->postsDetail($post);
+            return response()->json([
+                'status' => true,
+                'data' => $post
+            ], 200);
+        }
         // dd($data);
         // return view('edit', $data);
-        return response()->json($data, 200);
     }
 }

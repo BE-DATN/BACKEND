@@ -10,6 +10,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+
 class RegisterUserAction
 {
     protected $request;
@@ -20,35 +22,72 @@ class RegisterUserAction
     }
     public function createUser()
     {
+        $errors = array();
         try {
             DB::beginTransaction();
+
             $userDTO = new UserDTO();
-            $user = User::create([
-                'username' => $this->request->username,
-                'email' => $this->request->email,
-                'password' => Hash::make($this->request->password),
-            ]);
-            // dd($user->id);
-            
-            if ($this->createProfileForUser($user->id)) {
-                DB::commit();
-                return $userDTO->dataUser($user);
+
+            $input = Validator::make(
+                $this->request->input(),
+                [
+                    'username' => 'required|unique:users|max:255',
+                    'email' => 'required|email|unique:users|max:255',
+                    'password' => 'required|min:6',
+                    'firstname' => 'required',
+                    'lastname' => 'required',
+                    'gender' => 'required',
+                    'phone' => 'required|regex:/^(0[1-9])+([0-9]{8,9})\b$/',
+                    'address' => 'required',
+                    'avata_img' => 'image|mimes:jpg,png,jpeg,gif,svg',
+                ]
+            );
+
+
+            if ($input->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $input->errors()
+                ], 404);
             } else {
-                DB::rollBack();
-                return response()->json('Có xẩy ra lỗi khi tạo tài khoản', 400);
+                $user = User::create([
+                    'username' => $this->request->username,
+                    'email' => $this->request->email,
+                    'password' => Hash::make($this->request->password),
+                ]);
+
+                $return = $this->createProfileForUser($user->id);
+                if ($return->original['status']) {
+                    DB::commit();
+                    return response()->json([
+                        'status' => true,
+                        'data' => $userDTO->dataUser($user)
+                    ], 200);
+                } else {
+                    DB::rollBack();
+                    $errors[] = array_push($errors, $return->original['errors']);
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Có xẩy ra lỗi khi tạo tài khoản',
+                        'errors' => $this->createProfileForUser($user->id)->original['errors'],
+                    ], 400);
+                }
             }
-            // dd('done');
         } catch (\Throwable $th) {
             throw $th;
             DB::rollBack();
-            // dd($th->getMessage());
-            return response()->json($th->getMessage());
+            $errors[] = array_push($errors, $th->getMessage());
+            return response()->json([
+                'status' => false,
+                'errors' => $errors
+            ]);
         }
-        dd('done create_user');
     }
 
     public function createProfileForUser($id)
     {
+        $errors = array();
+
         try {
             $profile = Profile::create([
                 "user_id" => $id,
@@ -60,25 +99,35 @@ class RegisterUserAction
                 "avata_img" => $this->request->avata_img ? $this->request->avata_img : null,
             ]);
 
-            if ($this->createRoleForUser($profile->id)) {
-                return true;
+            // dd($this->createRoleForUser($profile->id)->original['status']);
+            $return = $this->createRoleForUser($profile->id);
+            if ($return->original['status']) {
+                return response()->json([
+                    'status' => true
+                ]);
             } else {
-                return false;
+                DB::rollBack();
+                $errors[] = array_push($errors, $return->original['errors']);
+                return response()->json([
+                    'status' => false,
+                    'errors' => $errors
+                ]);
             }
         } catch (\Throwable $th) {
-            throw $th;
             DB::rollBack();
-            // dd($th->getMessage());
-            return response()->json($th->getMessage());
-            // return false;
+            $errors[] = array_push($errors, $th->getMessage());
+            return response()->json([
+                'status' => false,
+                'errors' => $errors
+            ]);
         }
-        // return true;
     }
 
-    public function createRoleForUser($profileId, $role = 'GUEST')
+    public function createRoleForUser($profileId, $role = 'STUDENT')
     {
         try {
             $role = $this->request->role ? $this->request->role : $role;
+            $role = strtoupper($role);
             $roleId = Role::select('id')->where('name', 'like', "%{$role}%")->first()->id;
 
             $role = Role_Profile::insert([
@@ -87,15 +136,22 @@ class RegisterUserAction
             ]);
 
             if ($role) {
-                return true;
+                return response()->json([
+                    'status' => true
+                ]);
             } else {
-                return false;
+                DB::rollBack();
+                return response()->json([
+                    'status' => false
+                ]);
             }
-
         } catch (\Throwable $th) {
             // throw $th;
             DB::rollBack();
-            return response()->json($th->getMessage());
+            return response()->json([
+                'status' => false,
+                'errors' => $th->getMessage()
+            ]);
         }
         // return true;
     }

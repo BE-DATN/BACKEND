@@ -33,15 +33,23 @@ if (!function_exists('getCurrentUser')) {
     {
         $request = new Request();
         $user = null;
-        if ($request->bearerToken()) {
+        // return $request->bearerToken();
+        if ($user == null) {
             $user = JWTAuth::parseToken()->authenticate();
         }
-        if (getCookie()) {
+        if ($user == null && getCookie()) {
            $user = getCookie()['data'];
         }
         return $user;
     }
 }
+if (!function_exists('ccc')) {
+    function ccc($data)
+    {
+        return response()->json($data, 200);
+    }
+}
+
 if (!function_exists('checkAcccess')) {
     function checkAcccess(array $arrAccess, $input, $keyCheck)
     {

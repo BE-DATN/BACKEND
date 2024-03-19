@@ -6,7 +6,7 @@
     <title>form</title>
 </head>
 <body>
-    <form action="/api/post/edit/22" method="post" enctype="multipart/form-data">
+    <form action="/api/post/edit/5" method="post" enctype="multipart/form-data">
         @csrf
         <input type="text" name="title" value="{{$title}}"><br><br>
         <img src="{{$thumbnail}}" width="100" style="object-fit: cover;" alt="">

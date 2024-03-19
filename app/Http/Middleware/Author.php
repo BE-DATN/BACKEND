@@ -18,8 +18,8 @@ class Author
     {
 
 // Xem lai
-
         $acccess = ['ADMIN', 'TEACHER']; //Role asscess
+        // return response()->json(getCurrentUser(), 200);
         if ($user = getCurrentUser()) {
             $user = User::find(array_get($user, 'id'));
             $input = $user->profile->roles;

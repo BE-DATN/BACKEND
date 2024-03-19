@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Course extends Model
 {
     use HasFactory;
+    const limit = 10;
     protected $fillable = [
         'created_by',
         'name',

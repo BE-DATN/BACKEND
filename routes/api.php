@@ -65,7 +65,7 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
@@ -148,7 +148,7 @@ Route::group([
         Route::get('/delete-item/{id}', [CartController::class, 'deleteCart']);
     });
 });
-// Route Cart
+// Route Order
 Route::group([
     'prefix' => 'order',
 ], function () {
@@ -169,10 +169,16 @@ Route::get('view-post/{id}', function ($id, PostDTO $postDTO)
 {
     //
     $data = Post::where('id', $id)->first();
+    if (!$data) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Không tìm thấy bài viết này.',
+        ]);
+    }
     $data = $postDTO->postsDetail($data);
-    // dd($data);
     return view('edit', $data);
 });
+
 Route::get('course', function() {
     $courses = DB::table('courses')->select('*')->limit(5)->get(5);
     // dd($course);

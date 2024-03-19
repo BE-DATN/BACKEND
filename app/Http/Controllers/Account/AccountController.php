@@ -60,10 +60,23 @@ class AccountController extends Controller
 
     public function userRegister(RegisterUserAction $userAction) {
         $user = $userAction->createUser();
-        return response()->json([
-            'message' => 'Tài khoản đã được tạo thành công!',
-            'user' => $user
-        ]);
+
+        // dd(array_get($user->original, 'error'));
+
+        if ($user->original && array_get($user->original, 'status')) {
+            return response()->json([
+                'status' => true,
+                'message' => 'Tài khoản đã được tạo thành công!',
+                'user' => array_get($user->original, 'data')
+            ]);
+        } else {
+            return response()->json([
+                'status' => false,
+                'message' => 'Có xẩy ra lỗi khi tạo tài khoản!',
+                'errors' => array_get($user->original, 'errors')
+            ]);
+
+        }
     }
     /**
      * Get the authenticated User.
