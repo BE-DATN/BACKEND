@@ -95,10 +95,14 @@ class CourseController extends Controller
     {
         try {
             // $request = new Request();
+            // removeNullOrEmptyString($request->input());
+            // dd($request->input());
+            dd($request->hasFile('thumbnail'));
             $valid = Validator::make($request->input(), [
                 'name' => 'required|max:500',
                 'course_id' => 'required'
             ]);
+
             if ($valid->fails()) {
                 return response()->json([
                     'status' => false,
@@ -107,11 +111,10 @@ class CourseController extends Controller
                 die;
             }
 
-            if ($request->hasFile('thumbnail')) {
+            if ($request->hasFile('thumbnail') || $request->input('thumbnail')) {
                 $request->validate([
                     'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg',
                 ]);
-
                 $imageName = 'thumbnail_Session_' . uniqid() . '_.' . $request->thumbnail->extension();
                 $request->thumbnail->move(public_path('file/uploads/courses/thumbnails/'), $imageName);
                 $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);

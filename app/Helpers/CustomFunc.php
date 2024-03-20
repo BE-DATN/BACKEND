@@ -34,11 +34,11 @@ if (!function_exists('getCurrentUser')) {
         $request = new Request();
         $user = null;
         // return $request->bearerToken();
-        if ($user == null) {
+        if ($user == null && $request->bearerToken()) {
             $user = JWTAuth::parseToken()->authenticate();
         }
         if ($user == null && getCookie()) {
-           $user = json_decode(getCookie())['data'];
+           $user = getCookie()['data'];
         }
         return $user;
     }

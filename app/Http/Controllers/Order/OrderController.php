@@ -22,12 +22,14 @@ class OrderController extends Controller
                 ->where('user_id', array_get($user, 'id'))
                 ->first();
             $cart_items = $cart->cartDetails;
+            
             // dd($cart_items);
             // dd($cart);
 
             $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO';
             $voucher = $request->input('voucher') ? $request->input('payment') : 'null';
             $total_amount = $cart->cartDetails->sum(function ($cartDetail) {
+                dd($cartDetail->course);
                 return $cartDetail->course->price;
             });
             DB::beginTransaction();

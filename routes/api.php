@@ -189,3 +189,10 @@ Route::get('view-post/{id}', function ($id, PostDTO $postDTO)
 //     // dd($course);
 //     return view('course', compact('courses'));
 // });
+
+Route::get('add-session', function() {
+    return view('addSession');
+});
+Route::get('add-lesson', function() {
+    return view('addLesson');
+});

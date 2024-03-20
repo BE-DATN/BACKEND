@@ -28,9 +28,5 @@ class Course extends Model
     {
         return $this->hasMany(Cart_Detail::class);
     }
-    public function creator()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
 
 }
