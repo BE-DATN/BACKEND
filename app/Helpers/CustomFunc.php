@@ -38,7 +38,7 @@ if (!function_exists('getCurrentUser')) {
             $user = JWTAuth::parseToken()->authenticate();
         }
         if ($user == null && getCookie()) {
-           $user = getCookie()['data'];
+           $user = json_decode(getCookie())['data'];
         }
         return $user;
     }

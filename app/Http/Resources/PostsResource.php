@@ -18,7 +18,7 @@ class PostsResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
-            'thumbnail' => $this->thumbnail,
+            'thumbnail' => asset($this->thumbnail),
             'likes' => $this->likes,
             'views' => $this->views,
             'created_at' => date('Y-m-d H:i:s', strtotime($this->created_at)),

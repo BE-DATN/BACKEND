@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Course;
 use App\DTO\Course\CourseDTO;
 use App\Http\Controllers\Admin\Action\CourseAction;
-use App\Models\lession;
+use App\Models\lesson;
 use App\Models\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -23,7 +23,12 @@ class CourseController extends Controller
     public function index(CourseAction $courseAction)
     {
         $courses = $courseAction->search();
-        return response()->json($courses, 200);
+
+        $data = [
+            'title' => 'Danh sách Khóa học',
+            'courses' => CourseResource::collection($courses),
+        ];
+        return response()->json($data, 200);
     }
 
     /**
@@ -86,23 +91,43 @@ class CourseController extends Controller
         }
     }
 
-    public function addSession($course_id)
+    public function addSession(Request $request)
     {
-        $request = new Request();
         try {
-            $request->validate([
-                'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max:2048 means max file size is 2MB
+            // $request = new Request();
+            $valid = Validator::make($request->input(), [
+                'name' => 'required|max:500',
+                'course_id' => 'required'
             ]);
-            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
-            $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
-            $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
-            $session = Session::insert([
-                'course_id' => $course_id,
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'arrange' => $request->input('arrange'),  
-                'thumbnail' => $request->input('name'),
-            ]);
+            if ($valid->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $valid->errors()
+                ], 404);
+                die;
+            }
+
+            if ($request->hasFile('thumbnail')) {
+                $request->validate([
+                    'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg',
+                ]);
+
+                $imageName = 'thumbnail_Session_' . uniqid() . '_.' . $request->thumbnail->extension();
+                $request->thumbnail->move(public_path('file/uploads/courses/thumbnails/'), $imageName);
+                $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
+            } else {
+                $request->request->remove('thumbnail');
+            }
+            // $request->request->add(['course_id' => $course_id]);
+
+            // $session = Session::create([
+            //     'course_id' => $course_id,
+            //     'name' => $request->input('name'),
+            //     'description' => $request->input('description'),
+            //     'arrange' => $request->input('arrange'),  
+            //     'thumbnail' => $request->input('thumbnail'),
+            // ]);
+            $session = Session::create($request->input());
             return response()->json([
                 'status' => true,
                 'message' => 'Session đã được thêm vào khóa học.',
@@ -110,39 +135,47 @@ class CourseController extends Controller
             ]);
         } catch (\Throwable $th) {
             return response()->json([
-                'status' => true,
+                'status' => false,
                 'message' => 'Có xẩy ra lỗi khi tạo session này hãy thử lại sau.',
                 'error' => $th->getMessage(),
             ]);
         }
     }
-    public function addLession($session_id)
+    public function addLesson(Request $request)
     {
-        $request = new Request();
         try {
             $request->validate([
-                'thumbnail' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048', // max:2048 means max file size is 2MB
+                'video_url' => 'required|file|mimes:mp4,mov,ogg,qt'
             ]);
-            $imageName = 'thumbnail_' . uniqid() . '_.' . $request->file('thumbnail')->extension();
-            $request->file('thumbnail')->move(public_path('file/uploads/courses/thumbnails'), $imageName);
-            $request->request->add(['thumbnail' => "file/uploads/courses/thumbnails/$imageName"]);
+            $valid = Validator::make($request->input(), [
+                'name' => 'required|max:500',
+            ]);
+            if ($valid->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'errors' => $valid->errors()
+                ], 404);
+                die;
+            }
 
-            $lession = lession::insert([
-                'course_id' => $session_id,
-                'name' => $request->input('name'),
-                'description' => $request->input('description'),
-                'arrange' => $request->input('arrange'),  
-                'thumbnail' => $request->input('name'),
-            ]);
+            if ($request->hasFile('video_url')) {
+                $videoName = 'video_Lesson_' . uniqid() . '_.' . $request->video_url->extension();
+                $request->video_url->move(public_path('file/uploads/courses/videos/'), $videoName);
+                $request->request->add(['video_url' => "file/uploads/courses/videos/$videoName"]);
+            }
+
+            // $request->request->add(['session_id' => $session_id]);
+
+            $lesson = Lesson::create($request->input());
             return response()->json([
                 'status' => true,
-                'message' => 'Lession đã được thêm vào khóa học.',
-                'Session' => $lession
+                'message' => 'Lesson đã được thêm vào khóa học.',
+                'Lesson' => $lesson
             ]);
         } catch (\Throwable $th) {
             return response()->json([
-                'status' => true,
-                'message' => 'Có xẩy ra lỗi khi tạo lession này hãy thử lại sau.',
+                'status' => false,
+                'message' => 'Có xẩy ra lỗi khi tạo lesson này hãy thử lại sau.',
                 'error' => $th->getMessage(),
             ]);
         }
@@ -176,7 +209,7 @@ class CourseController extends Controller
         //
         $courseDTO = new CourseDTO();
         try {
-           
+
             $valid = Validator::make($request->input(), [
                 'name' => 'max:500',
                 'status' => 'required',
@@ -219,7 +252,7 @@ class CourseController extends Controller
                     'video_demo_url' => 'mimes:mp4,mov,ogg,qt',
                 ]);
                 // Xóa ảnh video_demo cũ
-                
+
                 if (File::exists($course->video_demo_url)) {
                     File::delete($course->video_demo_url);
                 }
@@ -253,9 +286,12 @@ class CourseController extends Controller
     public function list($id = null)
     {
         $id = array_get(getCurrentUser(), 'id');
-        $courses = DB::table('courses')->select(['*'])->where('created_by', $id)->paginate(10);
+        $courses = DB::table('courses')->select(['*'])
+            ->where('created_by', $id)
+            ->join('users', 'courses.created_by', '=', 'users.id')
+            ->paginate(10);
         $data = [
-            'page' => 'DS khóa học của User: ' . $id,
+            'page' => 'DS khóa học của User: ' . $courses[0]->username,
             'course' => CourseResource::collection($courses),
         ];
         return response()->json($data, 200);
@@ -266,17 +302,23 @@ class CourseController extends Controller
     public function destroy(string $id)
     {
         try {
-            Course::destroy($id);
+            Course::find($id)->update(['status' => 0]);
             return response()->json([
                 'status' => true,
-                'message' => "Khoá học đã được xóa.",
+                'message' => "Khoá học đã được ẩn.",
             ]);
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
-                'message' => "Có xẩy ra lỗi khi xóa khoá học $id.",
+                'message' => "Có xẩy ra lỗi khi ẩn khoá học $id.",
                 'error' => $th->getMessage()
             ]);
         }
+    }
+
+
+    public function getSession(Request $request) {
+        $sessions =  Session::where('course_id', $request->input('course_id'))->orderBy('arrange', 'asc')->get();
+        return response()->json($sessions, 200);
     }
 }

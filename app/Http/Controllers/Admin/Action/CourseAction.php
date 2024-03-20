@@ -11,13 +11,14 @@ class CourseAction
     protected $request;
     public function __construct(Request $request)
     {
-        
+
         $this->request = $request;
     }
     public function search()
     {
         $inp = $this->request->all();
         $attribute = removeNullOrEmptyString($inp);
+
         /** key search
          * ?author_name=
          * &author_id=
@@ -27,59 +28,62 @@ class CourseAction
          * &sort=['view','esc']
          */
 
-        $query = DB::table('courses')->select(
+        $query = Course::select(
             [
-                'courses.id', 
-                'courses.name', 
-                'courses.description', 
-                'courses.thumbnail', 
-                'price', 
-                'views', 
-                'courses.created_at', 
+                'courses.id',
+                'courses.name',
+                'users.username',
+                'courses.description',
+                'courses.thumbnail',
+                'courses.video_demo_url',
+                'price',
+                'views',
+                'courses.status',
+                'courses.created_at',
                 'courses.updated_at'
-            ])
+            ]
+        )
+            ->join('users', 'users.id', '=', 'courses.created_by')
             ->where('courses.status', '1');
-        // Search dữ liệu user ngoài bảng post -> join user
-        if (array_get($attribute, 'author_name') || array_get($attribute, 'author_id')) {
-            $query->join('users', 'users.id', '=', 'courses.created_by');
+        // Search dữ liệu user ngoài bảng course -> join user
 
-            // search author_name users.username
-            if (array_get($attribute, 'author_name')) {
-                $authorName = array_get($attribute, 'author_name');
-                $query->where(
-                    'users.username',
-                    'like',
-                    "%{$authorName}%"
-                );
-            }
-            // search user_id người tạo
-            if (array_get($attribute, 'author_id')) {
-                $query->where(
-                    'courses.created_by',
-                    '=',
-                    array_get($attribute, 'author_id')
-                );
-            }
+        // search author_name users.username
+        if (array_get($attribute, 'author_name')) {
+            $authorName = array_get($attribute, 'author_name');
+            $query->where(
+                'users.username',
+                'like',
+                "%{$authorName}%"
+            );
+        }
+
+        // search user_id người tạo
+        if (array_get($attribute, 'author_id')) {
+            $query->where(
+                'courses.created_by',
+                '=',
+                array_get($attribute, 'author_id')
+            );
         }
 
         // search course_name
-        if (array_get($attribute, 'post_name')) {
-            $postName = array_get($attribute, 'post_name');
+        if (array_get($attribute, 'course_name')) {
+            $courseName = array_get($attribute, 'course_name');
             $query->where(
                 'courses.name',
                 'like',
-                "%{$postName}%"
+                "%{$courseName}%"
             );
         }
 
-        // search post_id
-        if (array_get($attribute, 'post_id')) {
+        // search course_id
+        if (array_get($attribute, 'course_id')) {
             $query->where(
                 'courses.id',
                 '=',
-                array_get($attribute, 'post_id')
+                array_get($attribute, 'course_id')
             );
-        }       
+        }
 
         // Search time 
         // sắp xếp view||like asc||desc

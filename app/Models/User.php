@@ -64,5 +64,18 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasOne(Profile::class, 'user_id', 'id');
     }
+    /**
+     * Get all of the comments for the User
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function posts()
+    {
+        return $this->hasMany(Post::class, 'created_by', 'id');
+    }
+    public function courses()
+    {
+        return $this->hasMany(Course::class, 'created_by');
+    }
     // 
 }

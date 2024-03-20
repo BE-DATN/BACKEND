@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('course_id');
             $table->string('name');
             $table->tinyInteger('arrange');
-            $table->string('decription', 500);
+            $table->string('description', 500);
             $table->string('thumbnail', 500);
             $table->timestamps();
         });

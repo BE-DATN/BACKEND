@@ -42,8 +42,6 @@ class RegisterUserAction
                     'avata_img' => 'image|mimes:jpg,png,jpeg,gif,svg',
                 ]
             );
-
-
             if ($input->fails()) {
                 return response()->json([
                     'status' => false,

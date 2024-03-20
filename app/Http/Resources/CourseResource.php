@@ -15,16 +15,17 @@ class CourseResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $course->id,
-            'name' => $course->name,
-            'description' => $course->description,
-            'thumbnail' => asset($course->thumbnail),
-            'video_demo_url' => $course->video_demo_url,
-            'views' => $course->views,
-            'price' => $course->price,
-            'status' => $course->status,
-            'created_at' => date('Y-m-d H:i:s', strtotime($course->created_at)),
-            'updated_at' => date('Y-m-d H:i:s', strtotime($course->updated_at)),
+            'id' => $this->id,
+            'name' => $this->name,
+            'creator' => $this->username,
+            'description' => $this->description,
+            'thumbnail' => asset($this->thumbnail),
+            'video_demo_url' => $this->video_demo_url,
+            'views' => $this->views,
+            'price' => $this->price,
+            'status' => $this->status,
+            'created_at' => date('Y-m-d H:i:s', strtotime($this->created_at)),
+            'updated_at' => date('Y-m-d H:i:s', strtotime($this->updated_at)),
         ];
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Post\Action\PostAction;
 use App\Http\Resources\PostsResource;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -20,6 +21,7 @@ class PostController extends Controller
     public function index(PostAction $postAction)
     {
         $posts = $postAction->search();
+        
         $data = [
             'title' => 'Danh sách bài viết',
             // 'posts' => $posts,
@@ -36,9 +38,11 @@ class PostController extends Controller
     public function list($id = null)
     {
         $id = array_get(getCurrentUser(), 'id');
-        $posts = DB::table('posts')->select(['*'])->where('created_by', $id)->paginate(Post::Limit);
+        $posts = DB::table('posts')->select(['*'])
+        ->join('users', 'posts.created_by', '=', 'users.id')
+        ->where('created_by', $id)->paginate(Post::Limit);
         $data = [
-            'page' => 'DS Bài viết của User: ' . $id,
+            'page' => 'DS Bài viết của: ' . $posts[0]->username,
             'posts' => PostsResource::collection($posts),
         ];
         return response()->json($data, 200);

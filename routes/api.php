@@ -65,7 +65,7 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
@@ -103,35 +103,39 @@ Route::group([
 ], function () {
     Route::get('/', [CourseController::class, 'index']);
     Route::get('/{id}', [CourseController::class, 'show'])->whereNumber('id');
+    
+    Route::get('/getSession', [CourseController::class, 'getSession']);
 
     Route::group([
         'middleware' => ['auth', 'author.auth'],
     ], function () {
-        // Route::get('/list-owned-posts/{userId?}', [CourseController::class, 'list'])->whereNumber('userId');
+        Route::get('/list-owned-courses/{userId?}', [CourseController::class, 'list'])->whereNumber('userId');
         Route::post('/create', [CourseController::class, 'store']);
-
-        Route::post('/edit/{id}', [CourseController::class, 'update'])->whereNumber('id');//->middleware('action.auth')
-        Route::post('/delete/{id}', [CourseController::class, 'destroy'])->whereNumber('id');//->middleware('action.auth')
+        Route::post('/edit/{id}', [CourseController::class, 'update'])->whereNumber('id');
+        Route::post('/delete/{id}', [CourseController::class, 'destroy'])->whereNumber('id');
+        Route::get('/create-session', [CourseController::class, 'addSession']);
+        Route::get('/create-lesson', [CourseController::class, 'addLession']);
     });
+
 });
 
 // Admin Route
-Route::group([
-    'prefix' => 'admin',
-], function () {
-    Route::post('login', [AdminController::class, 'login']);
+// Route::group([
+//     'prefix' => 'admin',
+// ], function () {
+//     Route::post('login', [AdminController::class, 'login']);
 
-    Route::group([
-        'middleware' => ['auth:ad', 'admin.auth', 'author.auth'],
-    ], function () {
-        Route::get('/', [AdminController::class, 'index']);
-        Route::get('/checklogin', function() {
-            $admin = auth('ad')->user();
-            return response()->json($admin, 200);
-        });
-        // Route::get
-    });
-});
+//     Route::group([
+//         'middleware' => ['auth:ad', 'admin.auth', 'author.auth'],
+//     ], function () {
+//         Route::get('/', [AdminController::class, 'index']);
+//         Route::get('/checklogin', function() {
+//             $admin = auth('ad')->user();
+//             return response()->json($admin, 200);
+//         });
+//         // Route::get
+//     });
+// });
 
 
 
@@ -148,6 +152,7 @@ Route::group([
         Route::get('/delete-item/{id}', [CartController::class, 'deleteCart']);
     });
 });
+
 // Route Order
 Route::group([
     'prefix' => 'order',
@@ -161,9 +166,9 @@ Route::group([
     });
 });
 
-Route::get('form', function() {
-    return view('form');
-});
+// Route::get('form', function() {
+//     return view('form');
+// });
 
 Route::get('view-post/{id}', function ($id, PostDTO $postDTO)
 {
@@ -179,8 +184,8 @@ Route::get('view-post/{id}', function ($id, PostDTO $postDTO)
     return view('edit', $data);
 });
 
-Route::get('course', function() {
-    $courses = DB::table('courses')->select('*')->limit(5)->get(5);
-    // dd($course);
-    return view('course', compact('courses'));
-});
+// Route::get('course', function() {
+//     $courses = DB::table('courses')->select('*')->limit(5)->get(5);
+//     // dd($course);
+//     return view('course', compact('courses'));
+// });

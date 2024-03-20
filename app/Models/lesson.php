@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Session extends Model
+class lesson extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'course_id',
+        'session_id',
         'name',
-        'description',
-        'thumbnail',
+        'video_url',
+        'learned',
         'created_at',
         'updated_at',
         'arrange'
