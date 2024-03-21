@@ -26,13 +26,14 @@ class OrderController extends Controller
                 ->first();
             $cart_items = $cart->cartDetails;
 
-            $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO';
+            $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO_ATM';
             // dd($payment_method);
             $voucher = $request->input('voucher') ? $request->input('voucher') : 'null';
             $total_amount = $cart->cartDetails->sum(function ($cartDetail) {
-                // dd($cartDetail->course);
                 return $cartDetail->course->price;
             });
+            // dd($total_amount);
+
             DB::beginTransaction();
             $order = order::create([
                 'user_id' => array_get($user, 'id'),
@@ -40,13 +41,26 @@ class OrderController extends Controller
                 'payment_method' => $payment_method,
                 'voucher' => $voucher,
                 'order_status' => 0,
+                'order_id' => time() . "",
             ]);
-            // dd($this->createOrderDetail($order, $cart_items));
+            // dd($order);
             if ($this->createOrderDetail($order, $cart_items)) {
                 DB::commit();
-                $jsonResult = $this->payMomo($order);
+                switch ($payment_method) {
+                    case 'MOMO_ATM':
+                        $jsonResult = $this->payMomoATM($order);
+                        break;
+                    case 'MOMO':
+                        $jsonResult = $this->payMomo($order);
+                        break;
 
-                $this->clearCart($cart);
+                    default:
+                        $jsonResult = $this->payMomoATM($order);
+                        break;
+                }
+                // if (array_get($jsonResult, 'payUrl')) {
+                // $this->clearCart($cart);
+                // }
             } else {
                 DB::rollBack();
             }
@@ -170,12 +184,67 @@ class OrderController extends Controller
     }
     public function apn(Request $request)
     {
-        return response()->json([
-            'page' => 'apn',
-            'data' => $request->input()
-        ], 200);
-    }
+        http_response_code(200); //200 - Everything will be 200 Oke
+        if (!empty($_POST)) {
+            $response = array();
+            try {
+                $partnerCode = $_POST["partnerCode"];
+                $orderId = $_POST["orderId"];
+                $requestId = $_POST["requestId"];
+                $amount = $_POST["amount"];
+                $orderInfo = $_POST["orderInfo"];
+                $orderType = $_POST["orderType"];
+                $transId = $_POST["transId"];
+                $resultCode = $_POST["resultCode"];
+                $message = $_POST["message"];
+                $payType = $_POST["payType"];
+                $responseTime = $_POST["responseTime"];
+                $extraData = $_POST["extraData"];
+                $m2signature = $_POST["signature"]; //MoMo signature
+                $accessKey = $_POST["accessKey"];
+                $errorCode = $_POST["errorCode"];
 
+
+                //Checksum
+                $rawHash = "accessKey=" . $accessKey . "&amount=" . $amount . "&extraData=" . $extraData . "&message=" . $message . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo .
+                    "&orderType=" . $orderType . "&partnerCode=" . $partnerCode . "&payType=" . $payType . "&requestId=" . $requestId . "&responseTime=" . $responseTime .
+                    "&resultCode=" . $resultCode . "&transId=" . $transId;
+
+                $partnerSignature = hash_hmac("sha256", $rawHash, 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa');
+
+                if ($m2signature == $partnerSignature) {
+                    if ($errorCode == '0') {
+                        $result = '<div class="alert alert-success">Capture Payment Success</div>';
+                    } else {
+                        $result = '<div class="alert alert-danger">' . $message . '</div>';
+                    }
+                } else {
+                    $result = '<div class="alert alert-danger">This transaction could be hacked, please check your signature and returned signature</div>';
+                }
+            } catch (\Exception $e) {
+                echo $response['message'] = $e;
+            }
+
+            $debugger = array();
+            $debugger['rawData'] = $rawHash;
+            $debugger['momoSignature'] = $m2signature;
+            $debugger['partnerSignature'] = $partnerSignature;
+
+            if ($m2signature == $partnerSignature) {
+                $response['message'] = "Received payment result success";
+            } else {
+                $response['message'] = "ERROR! Fail checksum";
+            }
+            $response['debugger'] = $debugger;
+            echo json_encode($response);
+        }
+        order::where('order_id', $orderId)->first()->update(['order_status' => 100]);
+        // return response()->json([
+        //     'page' => 'apn',
+        //     'data' => json_encode($response)
+        // ], 200);
+        return redirect()->away('https://google.vn')->with(json_encode($response));
+    }
 
     // momo atm
     public function execPostRequest($url, $data)
@@ -201,17 +270,15 @@ class OrderController extends Controller
         return $result;
     }
 
-
-    public function payMomo($order)
+    public function payMomoATM($order)
     {
-        $request = new Request();
         $config = '
-                    {
-                        "partnerCode": "MOMOBKUN20180529",
-                        "accessKey": "klm05TvNBzhg7h7j",
-                        "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
-                    }
-                ';
+        {
+            "partnerCode": "MOMOBKUN20180529",
+            "accessKey": "klm05TvNBzhg7h7j",
+            "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
+        }
+    ';
         $array = json_decode($config, true);
         // dd($order);
 
@@ -261,7 +328,52 @@ class OrderController extends Controller
         error_log(print_r($jsonResult, true));
         // redirect()->to(array_get($jsonResult, 'payUrl'));
         return $jsonResult;
-        // header('Location: ' . $jsonResult['payUrl']);
     }
-    
+
+    // Pay momo
+    public function payMomo($order)
+    {
+        $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
+
+        $config = '
+                    {
+                        "partnerCode": "MOMOBKUN20180529",
+                        "accessKey": "klm05TvNBzhg7h7j",
+                        "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
+                    }
+                ';
+        $array = json_decode($config, true);
+        $partnerCode = $array["partnerCode"];
+        $accessKey = $array["accessKey"];
+        $secretKey = $array["secretKey"];
+        $orderInfo = "Thanh toán qua MoMo";
+        $amount = "$order->total_amount";
+        $orderId = $order->order_id;;
+        $returnUrl  = "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
+        $extraData = "merchantName=MoMo Partner";
+
+        $requestId = time() . "";
+        $requestType = "captureMoMoWallet";
+
+        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData;
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        $data = array(
+            'partnerCode' => $partnerCode,
+            'accessKey' => $accessKey,
+            'requestId' => $requestId,
+            'amount' => $amount,
+            'orderId' => $orderId,
+            'orderInfo' => $orderInfo,
+            'returnUrl' => $returnUrl,
+            'notifyUrl' => $notifyurl,
+            'extraData' => $extraData,
+            'requestType' => $requestType,
+            'signature' => $signature
+        );
+        $result = $this->execPostRequest($endpoint, json_encode($data));
+        $jsonResult = json_decode($result, true);  // decode json
+        // dd($jsonResult);
+        return $jsonResult;
+    }
 }

@@ -14,5 +14,6 @@ class order extends Model
         'payment_method',
         'voucher',
         'order_status',
+        'order_id'
     ];
 }

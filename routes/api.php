@@ -103,7 +103,7 @@ Route::group([
 ], function () {
     Route::get('/', [CourseController::class, 'index']);
     Route::get('/{id}', [CourseController::class, 'show'])->whereNumber('id');
-    
+
     Route::get('/getSession', [CourseController::class, 'getSession']);
 
     Route::group([
@@ -116,7 +116,6 @@ Route::group([
         Route::get('/create-session', [CourseController::class, 'addSession']);
         Route::get('/create-lesson', [CourseController::class, 'addLession']);
     });
-
 });
 
 // Admin Route
@@ -164,7 +163,7 @@ Route::group([
         Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail'])->whereNumber('id');
         Route::get('/pay', [OrderController::class, 'order']);
         Route::get('/redirect-notification', [OrderController::class, 'result']);
-        Route::get('/payment-notification', [OrderController::class, 'apn']);
+        Route::post('/payment-notification', [OrderController::class, 'apn']);
     });
 });
 
