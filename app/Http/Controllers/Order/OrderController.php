@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Order;
 
+use App\DTO\Order\OrderDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResouce;
 use App\Models\Cart;
 use App\Models\order;
 use App\Models\order_detail;
@@ -22,14 +24,15 @@ class OrderController extends Controller
                 ->where('user_id', array_get($user, 'id'))
                 ->first();
             $cart_items = $cart->cartDetails;
-            
+
             // dd($cart_items);
             // dd($cart);
-
+            // dd(getCurrentUser());
             $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO';
+            // dd($payment_method);
             $voucher = $request->input('voucher') ? $request->input('payment') : 'null';
             $total_amount = $cart->cartDetails->sum(function ($cartDetail) {
-                dd($cartDetail->course);
+                // dd($cartDetail->course);
                 return $cartDetail->course->price;
             });
             DB::beginTransaction();
@@ -51,6 +54,7 @@ class OrderController extends Controller
             }
             return response()->json([
                 'message' => 'Đơn hàng đã được tạo thành công.',
+                'order_id' => $order->id,
                 'CheckOut' => array_get($jsonResult, 'payUrl')
             ], 200);
         } catch (\Throwable $th) {
@@ -106,6 +110,53 @@ class OrderController extends Controller
                 'message' => 'Có lỗi xẩy ra khi xóa sản phẩm trong giỏ hàng',
                 'error' => $th->getMessage()
             ], 200);
+        }
+    }
+
+    public function viewOrder($order_id, OrderDTO $orderDTO)
+    {
+        try {
+            $order = order::find($order_id);
+            if ($order) {
+                return response()->json([
+                    'status' => true,
+                    'order' => $orderDTO->viewOrder($order)
+                ], 200);
+            } {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Không tìm thấy đơn hàng này.',
+                ], 404);
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'status' => false,
+                'error' => $th->getMessage()
+            ], 404);
+        }
+    }
+    public function viewOrderDetail($order_id, OrderDTO $orderDTO)
+    {
+        try {
+            $order_detail = order_detail::where('order_id', $order_id)->get();
+            if ($order_detail) {
+                return response()->json([
+                    'status' => true,
+                    'order_detail' => OrderResouce::collection($order_detail)
+                ], 200);
+            } {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Không tìm thấy item của đơn hàng này.',
+                ], 404);
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+            return response()->json([
+                'status' => false,
+                'error' => $th->getMessage()
+            ], 404);
         }
     }
 
@@ -166,8 +217,8 @@ class OrderController extends Controller
         $requestId = "Order_{$order->id}" . time() . "";
         $requestType = "payWithMoMoATM";
         $extraData = "";
-    
-        $rawHash = "partnerCode=".$partnerCode."&accessKey=".$accessKey."&requestId=".$requestId."&bankCode=".$bankCode."&amount=".$amount."&orderId=".$orderId."&orderInfo=".$orderInfo."&returnUrl=".$returnUrl."&notifyUrl=".$notifyurl."&extraData=".$extraData."&requestType=".$requestType;
+
+        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&bankCode=" . $bankCode . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData . "&requestType=" . $requestType;
 
         // dd($rawHash);
         $signature = hash_hmac("sha256", $rawHash, $secretKey);

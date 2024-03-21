@@ -21,12 +21,12 @@ class Course extends Model
     ];
     public function cartDetails()
     {
-        return $this->hasMany(Cart_Detail::class);
+        return $this->hasMany(Cart_Detail::class, 'course_id', 'id');
     }
 
     public function orderDetails()
     {
-        return $this->hasMany(Cart_Detail::class);
+        return $this->hasMany(Order_Detail::class);
     }
 
 }

@@ -85,15 +85,37 @@ class CourseAction
             );
         }
 
+        // search
+        if (array_get($attribute, 'keySearch') & array_get($attribute, 'keySearch') != '') {
+            $query->where(
+                'courses.name',
+                'like',
+                "%" . array_get($attribute, 'keySearch') . "%"
+            )
+            ->orWhere(
+                'users.username',
+                'like',
+                "%" . array_get($attribute, 'keySearch') . "%"
+            )
+            ->orWhere(
+                'courses.description',
+                'like',
+                "%" . array_get($attribute, 'keySearch') . "%"
+            )
+            ;
+            
+        }
+
         // Search time 
         // sắp xếp view||like asc||desc
         if (array_get($attribute, 'sort')) {
-            $column = array_get($attribute, 'sort')[0];
-            $valueSort = array_get($attribute, 'sort')[1];
-            // dd($valueSort);
+            $sort = json_decode(array_get($attribute, 'sort'));
+            $column = $sort[0];
+            $valueSort = $sort[1];
             $query->orderBy($column, $valueSort);
         }
-        return $query->paginate(Course::limit);
+        $limit = array_get($attribute, 'limit') ? array_get($attribute, 'limit') : Course::limit;
+        return $query->paginate($limit);
         // return $query;
     }
 }

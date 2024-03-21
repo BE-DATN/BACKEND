@@ -16,8 +16,12 @@ class Cart_Detail extends Model
         return $this->belongsTo(Cart::class);
     }
 
+    // public function course()
+    // {
+    //     return $this->belongsTo(Course::class);
+    // }
     public function course()
     {
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(Course::class, 'course_id', 'id');
     }
 }

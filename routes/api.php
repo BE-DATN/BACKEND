@@ -160,6 +160,8 @@ Route::group([
     Route::group([
         'middleware' => ['auth'],
     ], function () {
+        Route::get('/{id}', [OrderController::class, 'viewOrder']);
+        Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail']);
         Route::get('/pay', [OrderController::class, 'order']);
         Route::get('/result', [OrderController::class, 'result']);
         Route::get('/apn', [OrderController::class, 'apn']);

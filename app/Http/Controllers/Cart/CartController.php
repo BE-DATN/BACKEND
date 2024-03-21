@@ -54,19 +54,16 @@ class CartController extends Controller
         try {
             array_get($this->user, 'id');
             $cart = $this->getCart();
-            $cartAction->addCartDetail($cart, $course_id);
-            $message = [
-                'status' => true,
-                'message' => "Đã thêm sản phẩm vào giỏ hàng"
-            ];
-            return response()->json($message, 200);
+            
+            $data = $cartAction->addCartDetail($cart, $course_id);
+            // $message = [
+            //     'status' => true,
+            //     'message' => "Đã thêm sản phẩm vào giỏ hàng"
+            // ];
+            return response()->json($data, 200);
         } catch (\Throwable $th) {
-            $message = [
-                'status' => false,
-                'message' => "Không thể thêm sản phẩm này vào giỏ hàng",
-                'error' => $th->getMessage()
-            ];
-            return response()->json($message, 500);
+            $data['error'] = $th->getMessage();
+            return response()->json($data, 500);
         }
     }
 
