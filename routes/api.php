@@ -148,8 +148,8 @@ Route::group([
     ], function () {
         Route::get('/', [CartController::class, 'index']);
         Route::get('/remove-cart', [CartController::class, 'remoteCart']);
-        Route::get('/add-item/{id}', [CartController::class, 'addCart']);
-        Route::get('/delete-item/{id}', [CartController::class, 'deleteCart']);
+        Route::get('/add-item/{id}', [CartController::class, 'addCart'])->whereNumber('id');
+        Route::get('/delete-item/{id}', [CartController::class, 'deleteCart'])->whereNumber('id');
     });
 });
 
@@ -160,11 +160,11 @@ Route::group([
     Route::group([
         'middleware' => ['auth'],
     ], function () {
-        Route::get('/{id}', [OrderController::class, 'viewOrder']);
-        Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail']);
+        Route::get('/{id}', [OrderController::class, 'viewOrder'])->whereNumber('id');
+        Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail'])->whereNumber('id');
         Route::get('/pay', [OrderController::class, 'order']);
-        Route::get('/result', [OrderController::class, 'result']);
-        Route::get('/apn', [OrderController::class, 'apn']);
+        Route::get('/redirect-notification', [OrderController::class, 'result']);
+        Route::get('/payment-notification', [OrderController::class, 'apn']);
     });
 });
 

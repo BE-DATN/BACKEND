@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    // Create order
     public function order(Request $request)
     {
         try {
@@ -25,12 +26,9 @@ class OrderController extends Controller
                 ->first();
             $cart_items = $cart->cartDetails;
 
-            // dd($cart_items);
-            // dd($cart);
-            // dd(getCurrentUser());
             $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO';
             // dd($payment_method);
-            $voucher = $request->input('voucher') ? $request->input('payment') : 'null';
+            $voucher = $request->input('voucher') ? $request->input('voucher') : 'null';
             $total_amount = $cart->cartDetails->sum(function ($cartDetail) {
                 // dd($cartDetail->course);
                 return $cartDetail->course->price;
@@ -66,6 +64,7 @@ class OrderController extends Controller
         }
     }
 
+    // Create order detail
     public function createOrderDetail($order, $cart_items)
     {
         try {
@@ -97,6 +96,7 @@ class OrderController extends Controller
         return 0;
     }
 
+    // Clear cart of current user
     public function clearCart($cart)
     {
         try {
@@ -112,7 +112,7 @@ class OrderController extends Controller
             ], 200);
         }
     }
-
+    // get order with order_id
     public function viewOrder($order_id, OrderDTO $orderDTO)
     {
         try {
@@ -136,7 +136,8 @@ class OrderController extends Controller
             ], 404);
         }
     }
-    public function viewOrderDetail($order_id, OrderDTO $orderDTO)
+    // get order with order_id
+    public function viewOrderDetail($order_id)
     {
         try {
             $order_detail = order_detail::where('order_id', $order_id)->get();
@@ -148,7 +149,7 @@ class OrderController extends Controller
             } {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Không tìm thấy item của đơn hàng này.',
+                    'message' => 'Không tìm thấy các khóa học của đơn hàng này.',
                 ], 404);
             }
         } catch (\Throwable $th) {
@@ -160,10 +161,23 @@ class OrderController extends Controller
         }
     }
 
+    public function result(Request $request)
+    {
+        return response()->json([
+            'page' => 'result',
+            'data' => $request->input()
+        ], 200);
+    }
+    public function apn(Request $request)
+    {
+        return response()->json([
+            'page' => 'apn',
+            'data' => $request->input()
+        ], 200);
+    }
 
 
-
-    // momo 
+    // momo atm
     public function execPostRequest($url, $data)
     {
         $ch = curl_init($url);
@@ -210,8 +224,8 @@ class OrderController extends Controller
         $orderInfo = "Thanh toán qua MoMo";
         $amount = "$order->total_amount";
         $orderId = time() . "";
-        $returnUrl = "http://course-selling.id.vn";
-        $notifyurl = "http://course-selling.id.vn";
+        $returnUrl = "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
         $bankCode = "SML";
         // dd($order);
         $requestId = "Order_{$order->id}" . time() . "";
@@ -249,12 +263,5 @@ class OrderController extends Controller
         return $jsonResult;
         // header('Location: ' . $jsonResult['payUrl']);
     }
-    public function result(Request $request)
-    {
-        return response()->json(['apn'], 200);
-    }
-    public function apn(Request $request)
-    {
-        return response()->json(['apn'], 200);
-    }
+    
 }
