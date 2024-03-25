@@ -1,0 +1,118 @@
+    public function payMomoATM($order)
+    {
+        $config = '
+        {
+            "partnerCode": "MOMOBKUN20180529",
+            "accessKey": "klm05TvNBzhg7h7j",
+            "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
+        }
+        ';
+        $array = json_decode($config, true);
+        // dd($order);
+
+        $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
+
+
+        $partnerCode = $array["partnerCode"];
+        $accessKey = $array["accessKey"];
+        $secretKey = $array["secretKey"];
+        $orderInfo = "Thanh toán qua MoMo";
+        $amount = "$order->total_amount";
+        $orderId = time() . "";
+        $returnUrl = "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
+        $bankCode = "SML";
+        // dd($order);
+        $requestId = "Order_{$order->id}" . time() . "";
+        $requestType = "payWithMoMoATM";
+        $extraData = "";
+
+        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&bankCode=" . $bankCode . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData . "&requestType=" . $requestType;
+
+        // dd($rawHash);
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        // dd($signature);
+        $data = array(
+            'partnerCode' => $partnerCode,
+            // 'partnerName' => "Test",
+            'partnerName' => "Dự án tốt nghiệp",
+            'store_id' => "MomoTestStore",
+            'accessKey' => $accessKey,
+            'requestId' => $requestId,
+            'amount' => $amount,
+            'orderId' => $orderId,
+            'orderInfo' => $orderInfo,
+            'returnUrl' => $returnUrl,
+            'bankCode' => $bankCode,
+            'notifyUrl' => $notifyurl,
+            'extraData' => $extraData,
+            'requestType' => $requestType,
+            'signature' => $signature
+        );
+        $result = $this->execPostRequest($endpoint, json_encode($data));
+
+        $jsonResult = json_decode($result, true);  // decode json
+        dd($jsonResult);
+        error_log(print_r($jsonResult, true));
+        // redirect()->to(array_get($jsonResult, 'payUrl'));
+        return $jsonResult;
+    }
+
+    // Pay momo
+    public function payMomo($order)
+    {
+        $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
+
+        // $config = '
+        //             {
+        //                 "partnerCode": "MOMOIQA420180417",
+        //                 "accessKey": "mTCKt9W3eU1m39TW",
+        //                 "secretKey": "PPuDXq1KowPT1ftR8DvlQTHhC03aul17"
+        //             }
+        //         ';
+        //         // "mTCKt9W3eU1m39TW", 'MOMOIQA420180417', 'PPuDXq1KowPT1ftR8DvlQTHhC03aul17'
+        //         // "mTCKt9W3eU1m39TW", 'MOMOLRJZ20181206', 'KqBEecvaJf1nULnhPF5htpG3AMtDIOlD'
+
+
+        $config = '
+                    {
+                        "partnerCode": "MOMOBKUN20180529",
+                        "accessKey": "klm05TvNBzhg7h7j",
+                        "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
+                    }
+                ';
+        $array = json_decode($config, true);
+        $partnerCode = $array["partnerCode"];
+        $accessKey = $array["accessKey"];
+        $secretKey = $array["secretKey"];
+        $orderInfo = "Thanh toán qua MoMo";
+        $amount = "$order->total_amount";
+        $orderId = $order->order_id;;
+        $returnUrl  = "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
+        $extraData = "merchantName=MoMo Partner";
+
+        $requestId = time() . "";
+        $requestType = "captureMoMoWallet";
+
+        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData;
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        $data = array(
+            'partnerCode' => $partnerCode,
+            'accessKey' => $accessKey,
+            'requestId' => $requestId,
+            'amount' => $amount,
+            'orderId' => $orderId,
+            'orderInfo' => $orderInfo,
+            'returnUrl' => $returnUrl,
+            'notifyUrl' => $notifyurl,
+            'extraData' => $extraData,
+            'requestType' => $requestType,
+            'signature' => $signature
+        );
+        $result = $this->execPostRequest($endpoint, json_encode($data));
+        $jsonResult = json_decode($result, true);  // decode json
+        // dd($jsonResult);
+        return $jsonResult;
+    }
+}

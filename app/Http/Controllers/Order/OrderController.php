@@ -26,7 +26,7 @@ class OrderController extends Controller
                 ->first();
             $cart_items = $cart->cartDetails;
 
-            $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO_ATM';
+            $payment_method = $request->input('payment') ? $request->input('payment') : 'MOMO';
             // dd($payment_method);
             $voucher = $request->input('voucher') ? $request->input('voucher') : 'null';
             $total_amount = $cart->cartDetails->sum(function ($cartDetail) {
@@ -53,9 +53,11 @@ class OrderController extends Controller
                     case 'MOMO':
                         $jsonResult = $this->payMomo($order);
                         break;
-
+                    case 'VNPAY':
+                        $jsonResult = $this->vnpay($order);
+                        break;
                     default:
-                        $jsonResult = $this->payMomoATM($order);
+                        $jsonResult = $this->payMomo($order);
                         break;
                 }
                 // if (array_get($jsonResult, 'payUrl')) {
@@ -177,74 +179,81 @@ class OrderController extends Controller
 
     public function result(Request $request)
     {
-        return response()->json([
-            'page' => 'result',
-            'data' => $request->input()
-        ], 200);
-    }
-    public function apn(Request $request)
-    {
         http_response_code(200); //200 - Everything will be 200 Oke
-        if (!empty($_POST)) {
-            $response = array();
-            try {
-                $partnerCode = $_POST["partnerCode"];
-                $orderId = $_POST["orderId"];
-                $requestId = $_POST["requestId"];
-                $amount = $_POST["amount"];
-                $orderInfo = $_POST["orderInfo"];
-                $orderType = $_POST["orderType"];
-                $transId = $_POST["transId"];
-                $resultCode = $_POST["resultCode"];
-                $message = $_POST["message"];
-                $payType = $_POST["payType"];
-                $responseTime = $_POST["responseTime"];
-                $extraData = $_POST["extraData"];
-                $m2signature = $_POST["signature"]; //MoMo signature
-                $accessKey = $_POST["accessKey"];
-                $errorCode = $_POST["errorCode"];
+        $array = $this->config();
+        try {
+            $accessKey = $array["accessKey"];
+            $secretKey = $array["secretKey"];
 
+            $partnerCode = $request->input(["partnerCode"]);
+            $orderId = $request->input(["orderId"]);
+            $requestId = $request->input(["requestId"]);
+            $amount = $request->input(["amount"]);
+            $orderInfo = $request->input(["orderInfo"]);
+            $orderType = $request->input(["orderType"]);
+            $transId = $request->input(["transId"]);
+            $resultCode = $request->input(["resultCode"]);
+            $message = $request->input(["message"]);
+            $payType = $request->input(["payType"]);
+            $responseTime = $request->input(["responseTime"]);
+            $extraData = $request->input(["extraData"]);
+            $m2signature = $request->input(["signature"]); //MoMo signature
 
-                //Checksum
-                $rawHash = "accessKey=" . $accessKey . "&amount=" . $amount . "&extraData=" . $extraData . "&message=" . $message . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo .
-                    "&orderType=" . $orderType . "&partnerCode=" . $partnerCode . "&payType=" . $payType . "&requestId=" . $requestId . "&responseTime=" . $responseTime .
-                    "&resultCode=" . $resultCode . "&transId=" . $transId;
+            //Checksum
+            $rawHash = "accessKey=" . $accessKey . "&amount=" . $amount . "&extraData=" . $extraData . "&message=" . $message . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&orderType=" . $orderType . "&partnerCode=" . $partnerCode . "&payType=" . $payType . "&requestId=" . $requestId . "&responseTime=" . $responseTime . "&resultCode=" . $resultCode . "&transId=" . $transId;
+            $partnerSignature = hash_hmac("sha256", $rawHash, $secretKey);
+            // dd($request->input(), ['new' => $partnerSignature]);
 
-                $partnerSignature = hash_hmac("sha256", $rawHash, 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa');
-
-                if ($m2signature == $partnerSignature) {
-                    if ($errorCode == '0') {
-                        $result = '<div class="alert alert-success">Capture Payment Success</div>';
-                    } else {
-                        $result = '<div class="alert alert-danger">' . $message . '</div>';
-                    }
+            if ($m2signature == $partnerSignature) {
+                // dd('=');
+                if ($resultCode == '0') {
+                    $data = [
+                        'Payment_status' => $message,
+                        'order_id' => $orderId,
+                        'amount' => $amount,
+                        'Payment_method' => $payType
+                    ];
+                    order::where('order_id', $orderId)->first()->update(['order_status' => 1]);
+                    // dd(order::where('order_id', $orderId)->first());
+                    DB::table('logs')->insert(['log' => json_encode($data)]);
                 } else {
-                    $result = '<div class="alert alert-danger">This transaction could be hacked, please check your signature and returned signature</div>';
+                    $data = [
+                        'Payment_status' => $message,
+                        'order_id' => $orderId,
+                    ];
+                    DB::table('logs')->insert(['log' => json_encode($data)]);
                 }
-            } catch (\Exception $e) {
-                echo $response['message'] = $e;
+            } else {
+                // dd('!=');
+                $data = [
+                    'danger' => "Giao dịch này có thể bị hack, vui lòng kiểm tra chữ ký của bạn và trả lại chữ ký",
+                    'order_id' => $orderId,
+                ];
+                DB::table('logs')->insert(['log' => json_encode($data)]);
             }
+        } catch (\Exception $e) {
+            DB::table('logs')->insert(['log' => $e->getMessage()]);
+        }
 
-            $debugger = array();
+        $debugger = array();
+
+        if ($m2signature == $partnerSignature) {
             $debugger['rawData'] = $rawHash;
             $debugger['momoSignature'] = $m2signature;
             $debugger['partnerSignature'] = $partnerSignature;
-
-            if ($m2signature == $partnerSignature) {
-                $response['message'] = "Received payment result success";
-            } else {
-                $response['message'] = "ERROR! Fail checksum";
-            }
-            $response['debugger'] = $debugger;
-            echo json_encode($response);
+            $debugger['message'] = "Received payment result success";
+        } else {
+            $debugger['rawData'] = $rawHash;
+            $debugger['momoSignature'] = $m2signature;
+            $debugger['partnerSignature'] = $partnerSignature;
+            $debugger['message'] = "ERROR! Fail checksum";
         }
-        order::where('order_id', $orderId)->first()->update(['order_status' => 100]);
-        // return response()->json([
-        //     'page' => 'apn',
-        //     'data' => json_encode($response)
-        // ], 200);
-        return redirect()->away('https://google.vn')->with(json_encode($response));
+        return view('success', [
+            'response' => $request->input(),
+            'debugger' => $debugger
+        ]);
     }
+
 
     // momo atm
     public function execPostRequest($url, $data)
@@ -272,69 +281,95 @@ class OrderController extends Controller
 
     public function payMomoATM($order)
     {
-        $config = '
-        {
-            "partnerCode": "MOMOBKUN20180529",
-            "accessKey": "klm05TvNBzhg7h7j",
-            "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
-        }
-    ';
-        $array = json_decode($config, true);
-        // dd($order);
-
-        $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
-
+        $array = $this->config();
+        $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
 
         $partnerCode = $array["partnerCode"];
         $accessKey = $array["accessKey"];
-        $secretKey = $array["secretKey"];
+        $serectkey = $array["secretKey"];
+
         $orderInfo = "Thanh toán qua MoMo";
         $amount = "$order->total_amount";
-        $orderId = time() . "";
-        $returnUrl = "http://api.course-selling.id.vn/api/order/redirect-notification";
-        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
+        $orderId = $order->order_id;
+        $redirectUrl = "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $ipnUrl = "http://api.course-selling.id.vn/api/order/payment-notification";
         $bankCode = "SML";
-        // dd($order);
-        $requestId = "Order_{$order->id}" . time() . "";
-        $requestType = "payWithMoMoATM";
         $extraData = "";
 
-        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&bankCode=" . $bankCode . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData . "&requestType=" . $requestType;
+        // $requestId = "Order_{$order->id}" . time() . "";
+        // $requestType = "payWithMoMoATM";
+        $requestId = time() . "";
+        $requestType = "payWithATM";
 
-        // dd($rawHash);
-        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        $rawHash = "accessKey=" . $accessKey . "&amount=" . $amount . "&extraData=" . $extraData . "&ipnUrl=" . $ipnUrl . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&partnerCode=" . $partnerCode . "&redirectUrl=" . $redirectUrl . "&requestId=" . $requestId . "&requestType=" . $requestType;
+        $signature = hash_hmac("sha256", $rawHash, $serectkey);
+
         // dd($signature);
         $data = array(
             'partnerCode' => $partnerCode,
-            // 'partnerName' => "Test",
-            'partnerName' => "Dự án tốt nghiệp",
-            'store_id' => "MomoTestStore",
-            'accessKey' => $accessKey,
+            'partnerName' => "Test",
+            "storeId" => "MomoTestStore",
             'requestId' => $requestId,
             'amount' => $amount,
             'orderId' => $orderId,
             'orderInfo' => $orderInfo,
-            'returnUrl' => $returnUrl,
-            'bankCode' => $bankCode,
-            'notifyUrl' => $notifyurl,
+            'redirectUrl' => $redirectUrl,
+            'ipnUrl' => $ipnUrl,
+            'lang' => 'vi',
             'extraData' => $extraData,
             'requestType' => $requestType,
             'signature' => $signature
         );
         $result = $this->execPostRequest($endpoint, json_encode($data));
-
         $jsonResult = json_decode($result, true);  // decode json
-        // dd($jsonResult);
         error_log(print_r($jsonResult, true));
-        // redirect()->to(array_get($jsonResult, 'payUrl'));
+        dd($jsonResult);
         return $jsonResult;
     }
 
     // Pay momo
     public function payMomo($order)
     {
-        $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
+        $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+        $array = $this->config();
 
+        $partnerCode = $array["partnerCode"];
+        $accessKey = $array["accessKey"];
+        $secretKey = $array["secretKey"];
+        $orderInfo = "Thanh toán qua MoMo";
+        $amount = "$order->total_amount";
+        $orderId = $order->order_id;;
+        $extraData = "merchantName=MoMo Partner";
+
+        $requestId = time() . "";
+        $requestType = "captureWallet";
+        $redirectUrl =  "http://api.course-selling.id.vn/api/order/redirect-notification";
+        $ipnUrl = "http://api.course-selling.id.vn/api/order/payment-notification";
+        $rawHash = "accessKey=" . $accessKey . "&amount=" . $amount . "&extraData=" . $extraData . "&ipnUrl=" . $ipnUrl . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&partnerCode=" . $partnerCode . "&redirectUrl=" . $redirectUrl . "&requestId=" . $requestId . "&requestType=" . $requestType;
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        // dd($signature);
+        $data = array(
+            'partnerCode' => $partnerCode,
+            'partnerName' => "Test",
+            "storeId" => "MomoTestStore",
+            'requestId' => $requestId,
+            'amount' => $amount,
+            'orderId' => $orderId,
+            'orderInfo' => $orderInfo,
+            'redirectUrl' => $redirectUrl,
+            'ipnUrl' => $ipnUrl,
+            'lang' => 'vi',
+            'extraData' => $extraData,
+            'requestType' => $requestType,
+            'signature' => $signature
+        );
+        $result = $this->execPostRequest($endpoint, json_encode($data));
+        $jsonResult = json_decode($result, true);  // decode json
+        dd($jsonResult);
+        return $jsonResult;
+    }
+    protected function config()
+    {
         $config = '
                     {
                         "partnerCode": "MOMOBKUN20180529",
@@ -342,38 +377,149 @@ class OrderController extends Controller
                         "secretKey": "at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa"
                     }
                 ';
-        $array = json_decode($config, true);
-        $partnerCode = $array["partnerCode"];
-        $accessKey = $array["accessKey"];
-        $secretKey = $array["secretKey"];
-        $orderInfo = "Thanh toán qua MoMo";
-        $amount = "$order->total_amount";
-        $orderId = $order->order_id;;
-        $returnUrl  = "http://api.course-selling.id.vn/api/order/redirect-notification";
-        $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
-        $extraData = "merchantName=MoMo Partner";
+        return json_decode($config, true);
+    }
 
-        $requestId = time() . "";
-        $requestType = "captureMoMoWallet";
+    // VNPAY
+    public function vnpay($order)
+    {
+        $request = new Request();
+        $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
+        $vnp_Returnurl =  "http://api.course-selling.id.vn/api/order/vnp-redirect";
+        $vnp_TmnCode = "Z3TMZ8S8"; //Mã website tại VNPAY
+        $vnp_HashSecret = "FITCAHVHWCWPWLVLHFTLWXLZIXCENEYI"; //Chuỗi bí mật
 
-        $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData;
-        $signature = hash_hmac("sha256", $rawHash, $secretKey);
-        $data = array(
-            'partnerCode' => $partnerCode,
-            'accessKey' => $accessKey,
-            'requestId' => $requestId,
-            'amount' => $amount,
-            'orderId' => $orderId,
-            'orderInfo' => $orderInfo,
-            'returnUrl' => $returnUrl,
-            'notifyUrl' => $notifyurl,
-            'extraData' => $extraData,
-            'requestType' => $requestType,
-            'signature' => $signature
+        $vnp_Amount = (int)$order->total_amount * 100;
+        $vnp_BankCode = $request->input('bank_code') ? $request->input('bank_code') : 'NCB';
+        // $vnp_BankCode = 'VNBANK';
+        $vnp_TxnRef = $order->order_id;
+        $vnp_OrderInfo = "Thanh toán đơn hàng khóa học";
+        $vnp_Locale = 'vn';
+        $vnp_CurrCode = 'VND';
+        $inputData = array(
+            "vnp_Version" => "2.1.0",
+            "vnp_TmnCode" => $vnp_TmnCode,
+            "vnp_Amount" => $vnp_Amount,
+            "vnp_Command" => "pay",
+            "vnp_CreateDate" => date('YmdHis'),
+            "vnp_CurrCode" => $vnp_CurrCode,
+            "vnp_Locale" => $vnp_Locale,
+            "vnp_OrderInfo" => $vnp_OrderInfo,
+            "vnp_OrderType" => "Giáo dục",
+            "vnp_ReturnUrl" => $vnp_Returnurl,
+            "vnp_BankCode" => $vnp_BankCode,
+            "vnp_TxnRef" => $vnp_TxnRef,
+            "vnp_IpAddr" => $_SERVER['REMOTE_ADDR'],
+
         );
-        $result = $this->execPostRequest($endpoint, json_encode($data));
-        $jsonResult = json_decode($result, true);  // decode json
-        // dd($jsonResult);
-        return $jsonResult;
+        ksort($inputData);
+        $query = "";
+        $i = 0;
+        $hashdata = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashdata .= urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+            $query .= urlencode($key) . "=" . urlencode($value) . '&';
+        }
+
+        $vnp_Url = $vnp_Url . "?" . $query;
+        if (isset($vnp_HashSecret)) {
+            $vnpSecureHash =   hash_hmac('sha512', $hashdata, $vnp_HashSecret); //
+            $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+        }
+        $returnData = array(
+            'code' => '00', 'message' => 'success', 'payUrl' => $vnp_Url
+        );
+
+        return $returnData;
+    }
+
+    public function apn(Request $request)
+    {
+
+        return response()->json([
+            'page' => 'apn',
+            'data' => $request->input()
+        ], 200);
+    }
+    public function vmp_apn(Request $request)
+    {
+
+        return response()->json([
+            'page' => 'vmp_apn',
+            'data' => $request->input()
+        ], 200);
+    }
+    public function vnp_return(Request $request)
+    {
+        $vnp_HashSecret = "FITCAHVHWCWPWLVLHFTLWXLZIXCENEYI"; //Chuỗi bí mật
+
+        $vnp_SecureHash = $request->input('vnp_SecureHash');
+        $inputData = array();
+        foreach ($request->input() as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $inputData[$key] = $value;
+            }
+        }
+        $orderId = $request->input('vnp_TxnRef');
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+        if ($secureHash == $vnp_SecureHash) {
+            if ($request->input('vnp_ResponseCode') == '00') {
+                // echo "GD Thanh cong";
+
+                $data = [
+                    'Payment_status' => $request->input('vnp_TransactionStatus'),
+                    'order_id' => $orderId,
+                    'amount' => $request->input('vnp_Amount'),
+                    'Payment_method' => $request->input('vnp_CardType')
+                ];
+                order::where('order_id', $orderId)->first()->update(['order_status' => 1]);
+                // dd(order::where('order_id', $orderId)->first());
+                DB::table('logs')->insert(['log' => json_encode($data)]);
+            } else {
+                $data = [
+                    'danger' => "Giao dịch thất bại",
+                    'order_id' => $orderId,
+                ];
+                DB::table('logs')->insert(['log' => json_encode($data)]);
+            }
+        } else {
+            $data = [
+                'danger' => "Giao dịch này có thể bị hack, vui lòng kiểm tra chữ ký của bạn và trả lại chữ ký",
+                'order_id' => $orderId,
+            ];
+            DB::table('logs')->insert(['log' => json_encode($data)]);
+        }
+
+
+        $debugger = array();
+
+        return view('success', [
+            'response' => [
+                'resultCode' => $request->input('vnp_TransactionStatus') == "00" ? 0 : -99,
+                'message' => $request->input('vnp_TransactionStatus') == "00" ? "Thanh toán thành công" : "Có xẩy ra lỗi khi thanh toán vui lòng thử lại sau",
+                'orderId' => $orderId,
+                'amount' => $request->input('vnp_Amount'),
+                'payType' =>"VNPAY ". $request->input('vnp_CardType')
+            ],
+            'debugger' => $debugger
+        ]);
     }
 }

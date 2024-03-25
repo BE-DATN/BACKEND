@@ -7,6 +7,9 @@ use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
+use App\Http\Resources\LogsResource;
+use App\Models\log;
+use App\Models\order;
 use App\Models\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -65,7 +68,7 @@ Route::group([
     Route::get('login', [AccountController::class, 'login'])->name('user.login');
     Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
-    Route::get('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
+    Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
     Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
 
     Route::group([
@@ -146,9 +149,9 @@ Route::group([
         'middleware' => ['auth'],
     ], function () {
         Route::get('/', [CartController::class, 'index']);
-        Route::get('/remove-cart', [CartController::class, 'remoteCart']);
-        Route::get('/add-item/{id}', [CartController::class, 'addCart'])->whereNumber('id');
-        Route::get('/delete-item/{id}', [CartController::class, 'deleteCart'])->whereNumber('id');
+        Route::post('/remove-cart', [CartController::class, 'remoteCart']);
+        Route::post('/add-item/{id}', [CartController::class, 'addCart'])->whereNumber('id');
+        Route::post('/delete-item/{id}', [CartController::class, 'deleteCart'])->whereNumber('id');
     });
 });
 
@@ -164,6 +167,8 @@ Route::group([
         Route::get('/pay', [OrderController::class, 'order']);
         Route::get('/redirect-notification', [OrderController::class, 'result']);
         Route::post('/payment-notification', [OrderController::class, 'apn']);
+        Route::get('/vnp-redirect', [OrderController::class, 'vnp_return']);
+        Route::get('/vnp-ipn', [OrderController::class, 'vmp_apn']);
     });
 });
 
@@ -196,4 +201,11 @@ Route::get('add-session', function() {
 });
 Route::get('add-lesson', function() {
     return view('addLesson');
+});
+// Route::get('test-query', function() {
+//     order::where('order_id', "1711077087")->first()->update(['order_status' => 100]);
+// });
+Route::get('get-logs', function() {
+    $logs = log::select('*')->orderBy('id', 'desc')->limit(2)->get();
+    return response()->json(LogsResource::collection($logs), 200);
 });

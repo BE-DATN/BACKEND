@@ -1,0 +1,129 @@
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: block;
+    height: 100px;
+    width: auto;
+}
+
+.notification {
+    display: none;
+    align-items: center;
+    padding: 5px;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.5s forwards, fadeOut 2s forwards 3s;
+}
+.notification p {
+    font-weight: bold;
+}
+.danger {
+    background-color: #dd2121;
+}
+
+.success {
+    background-color: #4CAF50;
+}
+
+.close {
+    /* float: right; */
+    padding-left: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.btn {
+    display: flex;
+    justify-content: center;
+}
+.btn a {
+    display: block;
+    padding: 10px 10px;
+    text-decoration: none;
+    color: white;
+    background-color: #4CAF50;
+    font-weight: bold;
+    border-radius: 5px;
+}
+.btn #home {
+    background-color: #ff7731;
+    margin-right: 5px;
+}
+.btn #viewOrder {
+    color: #ff7731;
+    background-color: white;
+    margin-left: 5px;
+}
+.btn #viewOrder:hover {
+    color: white;
+    background-color: #ff7731;
+}
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+
+
+/*  */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.payment-success {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.payment-success-content {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.payment-success-content h2 {
+    color: #4CAF50;
+}
+
+.payment-success-content ul {
+    list-style: none;
+    padding: 0;
+}
+
+.payment-success-content ul li {
+    margin-bottom: 10px;
+}
+
+.payment-success-content ul li strong {
+    font-weight: bold;
+}
