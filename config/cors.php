@@ -19,10 +19,9 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://localhost:3000', 'http://course-selling.id.vn', 'http://course-selling.id.vn:3000', 'https://test-payment.momo.vn'],
+    'allowed_origins' => ['http://localhost:3000', 'http://course-selling.id.vn','https://course-selling.id.vn', '*'],//'http://api.course-selling.id.vn','https://api.course-selling.id.vn', 
     // 'allowed_origins' => ['*'],
-
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => ['*'],
 
     'allowed_headers' => ['*'],
 

@@ -21,7 +21,7 @@ class PostController extends Controller
     public function index(PostAction $postAction)
     {
         $posts = $postAction->search();
-        
+
         $data = [
             'title' => 'Danh sách bài viết',
             // 'posts' => $posts,
@@ -60,7 +60,7 @@ class PostController extends Controller
                 'content' => 'required',
             ]);
             $img = $request->validate([
-                'thumbnail' => 'file|image|mimes:jpeg,png,jpg,gif,svg', 
+                'thumbnail' => 'image|mimes:jpeg,png,jpg,gif,svg',
             ]);
 
             if ($input->fails()) {
@@ -109,11 +109,11 @@ class PostController extends Controller
                     'message' => 'Không tìm thấy bài viết này.',
                 ]);
             }
-            
-            
+
+
             if ($request->hasFile('thumbnail')) {
                 $img = $request->validate([
-                    'thumbnail' => 'image|mimes:jpeg,png,jpg,gif', 
+                    'thumbnail' => 'image|mimes:jpeg,png,jpg,gif',
                 ]);
                 // Xóa ảnh thumbnail cũ
                 if (File::exists($post->thumbnail)) {
@@ -124,7 +124,7 @@ class PostController extends Controller
                 // $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
                 $input['thumbnail'] = "file/uploads/posts/$imageName";
             }
-            
+
             // $post->update($request->input());
             $post->update($input);
 
@@ -143,7 +143,7 @@ class PostController extends Controller
     }
 
     /**
-     * Delete bài viết theo id 
+     * Delete bài viết theo id
      */
     public function destroy(string $id) //id bài viết
     {

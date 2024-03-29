@@ -67,10 +67,10 @@ class PostAction
                 '=',
                 array_get($attribute, 'post_id')
             );
-        }       
+        }
 
 
-        // Search time 
+        // Search time
         // sắp xếp view||like asc||desc
         if (array_get($attribute, 'sort')) {
             $column = array_get($attribute, 'sort')[0];

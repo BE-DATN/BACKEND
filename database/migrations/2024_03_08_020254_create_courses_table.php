@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('views');
             $table->tinyInteger('status');
             $table->string('thumbnail', 500);
-            $table->string('video_demo_url', 500);
+            $table->string('video_demo_url', 500)->nullable();
             $table->timestamps();
         });
     }
