@@ -24,4 +24,14 @@ class PostDTO
             'updated_at' => date('Y-m-d H:i:s', strtotime($posts->updated_at)),
         ];
     }
+    public function postComment($cm, $user) {
+        return [
+            'id' => $cm->id,
+            'creator' => $user->username,
+            'content' => $cm->content,
+            'status' => $cm->status,
+            'created_at' => date('Y-m-d H:i:s', strtotime($cm->created_at)),
+            'updated_at' => date('Y-m-d H:i:s', strtotime($cm->updated_at)),
+        ];
+    }
 }

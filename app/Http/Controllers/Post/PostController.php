@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Post\Action\PostAction;
 use App\Http\Resources\PostsResource;
 use App\Models\Post;
+use App\Models\Post_Comment;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,9 +39,21 @@ class PostController extends Controller
     public function list($id = null)
     {
         $id = array_get(getCurrentUser(), 'id');
-        $posts = DB::table('posts')->select(['*'])
+        $posts = DB::table('posts')->select([
+            'posts.id',
+            'posts.title',
+            'username',
+            'posts.content',
+            'posts.thumbnail',
+            'posts.views',
+            'posts.likes',
+            'posts.created_at',
+            'posts.updated_at',
+        ])
         ->join('users', 'posts.created_by', '=', 'users.id')
-        ->where('created_by', $id)->paginate(Post::Limit);
+        ->where('created_by', $id)
+        ->get();
+        // ->paginate(Post::Limit);
         $data = [
             'page' => 'DS Bài viết của: ' . $posts[0]->username,
             'posts' => PostsResource::collection($posts),
@@ -101,6 +114,7 @@ class PostController extends Controller
     {
         //
         try {
+            // return response()->json($request->input('content'));
             $input = removeNullOrEmptyString($request->input());
             $post = Post::find($id);
             if ($post == null) {
@@ -145,6 +159,7 @@ class PostController extends Controller
     /**
      * Delete bài viết theo id
      */
+
     public function destroy(string $id) //id bài viết
     {
         try {
@@ -184,5 +199,38 @@ class PostController extends Controller
         }
         // dd($data);
         // return view('edit', $data);
+    }
+    public function comment($id, Request $request, PostDTO $postDTO)
+    {
+        try {
+            $request->validate([
+                'title' => 'required|max:500',
+                'content' => 'required|max:1000',
+            ]);
+            if ($post = Post::where('id', $id)->where('status', 1)->first()) {
+                $input = $request->input();
+                $user = getCurrentUser();
+                // dd($user->id);
+                $input['post_id'] = $id;
+                $input['user_id'] =  $user->id;
+                $comment = Post_Comment::create($input);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Bài viết này không tồn tại hoặc đã bị ẩn',
+                ]);
+            }
+            return response()->json([
+                'status' => true,
+                'message' => 'Tạo comment thành công ',
+                'comment' => $postDTO->postComment($comment, $user)
+            ]);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => "Có lỗi xảy ra khi tạo Comment.",
+                'error' => $th->getMessage()
+            ]);
+        }
     }
 }

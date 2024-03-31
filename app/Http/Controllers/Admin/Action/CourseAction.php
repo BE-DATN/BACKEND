@@ -103,10 +103,10 @@ class CourseAction
                 "%" . array_get($attribute, 'keySearch') . "%"
             )
             ;
-            
+
         }
 
-        // Search time 
+        // Search time
         // sắp xếp view||like asc||desc
         if (array_get($attribute, 'sort')) {
             $sort = json_decode(array_get($attribute, 'sort'));
@@ -114,8 +114,8 @@ class CourseAction
             $valueSort = $sort[1];
             $query->orderBy($column, $valueSort);
         }
-        $limit = array_get($attribute, 'limit') ? array_get($attribute, 'limit') : Course::limit;
-        return $query->paginate($limit);
+        // $limit = array_get($attribute, 'limit') ? array_get($attribute, 'limit') : Course::limit;
+        return $query->get();
         // return $query;
     }
 }

@@ -33,13 +33,15 @@ if (!function_exists('getCurrentUser')) {
     {
         $request = new Request();
         $user = null;
-        $user = JWTAuth::parseToken()->authenticate();
         if ($user == null && getCookie()) {
             $user = getCookie()['data'];
         }
-        if (JWTAuth::parseToken()->authenticate()) {
+        if ($user == null && JWTAuth::parseToken()->authenticate()) {
             $user = JWTAuth::parseToken()->authenticate();
         }
+        // if (JWTAuth::parseToken()->authenticate()) {
+        //     $user = JWTAuth::parseToken()->authenticate();
+        // }
         return $user;
     }
 }

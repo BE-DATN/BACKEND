@@ -17,6 +17,7 @@ class PostsResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'creator' => $this->username ? $this->username : null,
             'content' => $this->content,
             'thumbnail' => asset($this->thumbnail),
             'likes' => $this->likes,

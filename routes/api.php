@@ -97,6 +97,7 @@ Route::group([
         ], function () {
             Route::get('/list-owned-posts/{userId?}', [PostController::class, 'list'])->whereNumber('userId');
             Route::post('/create', [PostController::class, 'store']);
+            Route::post('/comment/{id}', [PostController::class, 'comment'])->whereNumber('id');
 
             Route::post('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->middleware('action.auth');
             Route::post('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->middleware('action.auth');
@@ -125,22 +126,17 @@ Route::group([
     });
 
     // Admin Route
-    // Route::group([
-    //     'prefix' => 'admin',
-    // ], function () {
-    //     Route::post('login', [AdminController::class, 'login']);
-
-    //     Route::group([
-    //         'middleware' => ['auth:ad', 'admin.auth', 'author.auth'],
-    //     ], function () {
-    //         Route::get('/', [AdminController::class, 'index']);
-    //         Route::get('/checklogin', function() {
-    //             $admin = auth('ad')->user();
-    //             return response()->json($admin, 200);
-    //         });
-    //         // Route::get
-    //     });
-    // });
+    Route::group([
+        'prefix' => 'admin',
+    ], function () {
+        Route::group([
+            'middleware' => ['auth', 'author.auth'],
+        ], function () {
+            Route::get('/', [AdminController::class, 'index']);
+            
+            // Route::get
+        });
+    });
 
 
 
@@ -152,8 +148,8 @@ Route::group([
             'middleware' => ['auth'],
         ], function () {
             Route::get('/', [CartController::class, 'index']);
-            Route::post('/remove-cart', [CartController::class, 'remoteCart']);
             Route::post('/add-item/{id}', [CartController::class, 'addCart'])->whereNumber('id');
+            Route::post('/remove-cart', [CartController::class, 'remoteCart']);
             Route::post('/delete-item/{id}', [CartController::class, 'deleteCart'])->whereNumber('id');
         });
     });
@@ -162,14 +158,14 @@ Route::group([
     Route::group([
         'prefix' => 'order',
     ], function () {
+        Route::get('/redirect-notification', [OrderController::class, 'result']);
+        Route::post('/payment-notification', [OrderController::class, 'apn']);
         Route::group([
             'middleware' => ['auth'],
         ], function () {
             Route::get('/{id}', [OrderController::class, 'viewOrder'])->whereNumber('id');
             Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail'])->whereNumber('id');
             Route::get('/pay', [OrderController::class, 'order']);
-            Route::get('/redirect-notification', [OrderController::class, 'result']);
-            Route::post('/payment-notification', [OrderController::class, 'apn']);
             Route::get('/vnp-redirect', [OrderController::class, 'vnp_return']);
             Route::get('/vnp-ipn', [OrderController::class, 'vmp_apn']);
         });

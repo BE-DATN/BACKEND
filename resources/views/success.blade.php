@@ -31,7 +31,7 @@
                 <p>Cảm ơn bạn đã thanh toán. Chi tiết giao dịch của bạn:</p>
                 <ul>
                     <li><strong>Mã đơn hàng:</strong> {{ $response['orderId'] }}</li>
-                    <li><strong>Tổng tiền:</strong> {{ number_format($response['amount'], 0, 0) }}</li>
+                    <li><strong>Tổng tiền:</strong> {{ number_format($response['amount'], 0, 0) }} VNĐ</li>
                     <li><strong>Phương thức thanh toán:</strong> {{ $response['payType'] }}</li>
                     <li><strong>Thời gian:</strong> {{ now() }}</li>
                 </ul>
@@ -39,14 +39,14 @@
                 <h2 style="color: #dd2121">{{ $response['message'] }}</h2>
                 <ul>
                     <li><strong>Mã đơn hàng:</strong> {{ $response['orderId'] }}</li>
-                    <li><strong>Tổng tiền:</strong> {{ number_format($response['amount'], 0, 0) }}</li>
+                    <li><strong>Tổng tiền:</strong> {{ number_format($response['amount'], 0, 0) }} VNĐ</li>
                     <li><strong>Phương thức thanh toán:</strong> {{ $response['payType'] }}</li>
                     <li><strong>Thời gian:</strong> {{ now() }}</li>
                 </ul>
             @endif
             <div class="btn">
                 <a href="http://course-selling.id.vn" id="home">Trang chủ</a>
-                <a href="http://course-selling.id.vn/" id="viewOrder">Xem đơn hàng</a>
+                <a href="http://course-selling.id.vn" id="viewOrder">Xem đơn hàng</a>
             </div>
         </div>
     </div>

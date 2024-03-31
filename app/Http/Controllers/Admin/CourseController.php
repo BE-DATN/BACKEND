@@ -97,7 +97,7 @@ class CourseController extends Controller
             // $request = new Request();
             // removeNullOrEmptyString($request->input());
             // dd($request->input());
-            dd($request->hasFile('thumbnail'));
+            // dd($request->hasFile('thumbnail'));
             $valid = Validator::make($request->input(), [
                 'name' => 'required|max:500',
                 'course_id' => 'required'
@@ -127,7 +127,7 @@ class CourseController extends Controller
             //     'course_id' => $course_id,
             //     'name' => $request->input('name'),
             //     'description' => $request->input('description'),
-            //     'arrange' => $request->input('arrange'),  
+            //     'arrange' => $request->input('arrange'),
             //     'thumbnail' => $request->input('thumbnail'),
             // ]);
             $session = Session::create($request->input());
@@ -289,10 +289,23 @@ class CourseController extends Controller
     public function list($id = null)
     {
         $id = array_get(getCurrentUser(), 'id');
-        $courses = DB::table('courses')->select(['*'])
+        $courses = DB::table('courses')->select([
+            'courses.id',
+            'courses.name',
+            'username',
+            'courses.description',
+            'courses.thumbnail',
+            'courses.video_demo_url',
+            'courses.views',
+            'courses.price',
+            'courses.status',
+            'courses.created_at',
+            'courses.updated_at',
+        ])
             ->where('created_by', $id)
             ->join('users', 'courses.created_by', '=', 'users.id')
-            ->paginate(10);
+            // ->paginate(10);
+            ->get();
         $data = [
             'page' => 'DS khóa học của User: ' . $courses[0]->username,
             'course' => CourseResource::collection($courses),
@@ -320,7 +333,8 @@ class CourseController extends Controller
     }
 
 
-    public function getSession(Request $request) {
+    public function getSession(Request $request)
+    {
         $sessions =  Session::where('course_id', $request->input('course_id'))->orderBy('arrange', 'asc')->get();
         return response()->json($sessions, 200);
     }

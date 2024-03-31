@@ -323,7 +323,7 @@ class OrderController extends Controller
         $result = $this->execPostRequest($endpoint, json_encode($data));
         $jsonResult = json_decode($result, true);  // decode json
         error_log(print_r($jsonResult, true));
-        dd($jsonResult);
+        // dd($jsonResult);
         return $jsonResult;
     }
 
@@ -339,7 +339,8 @@ class OrderController extends Controller
         $orderInfo = "Thanh toán qua MoMo";
         $amount = "$order->total_amount";
         $orderId = $order->order_id;;
-        $extraData = "merchantName=MoMo Partner";
+        // $extraData = "merchantName=MoMo Partner";
+        $extraData = "";
 
         $requestId = time() . "";
         $requestType = "captureWallet";
@@ -350,8 +351,8 @@ class OrderController extends Controller
         // dd($signature);
         $data = array(
             'partnerCode' => $partnerCode,
-            'partnerName' => "Test",
-            "storeId" => "MomoTestStore",
+            // 'partnerName' => "Test",
+            // "storeId" => "MomoTestStore",
             'requestId' => $requestId,
             'amount' => $amount,
             'orderId' => $orderId,
@@ -365,9 +366,54 @@ class OrderController extends Controller
         );
         $result = $this->execPostRequest($endpoint, json_encode($data));
         $jsonResult = json_decode($result, true);  // decode json
-        dd($jsonResult);
+        // dd($jsonResult);
         return $jsonResult;
     }
+    // public function payMomo2($order)
+    // {
+    //     // $endpoint = "https://test-payment.momo.vn/v2/gateway/api/create";
+    //     $endpoint = "https://test-payment.momo.vn/gw_payment/transactionProcessor";
+
+    //     $array = $this->config();
+
+    //     $partnerCode = $array["partnerCode"];
+    //     $accessKey = $array["accessKey"];
+    //     $secretKey = $array["secretKey"];
+    //     $orderInfo = "Thanh toán qua MoMo";
+    //     $amount = "10000";
+    //     $orderId = time() . "";
+    //     $returnUrl = "http://api.course-selling.id.vn/api/order/redirect-notification";
+    //     $notifyurl = "http://api.course-selling.id.vn/api/order/payment-notification";
+    //     // Lưu ý: link notifyUrl không phải là dạng localhost
+    //     // $extraData = "merchantName=MoMo Partner";
+
+    //     $requestId = time() . "";
+    //     $requestType = "captureMoMoWallet";
+    //     $extraData = "";
+    //     //before sign HMAC SHA256 signature
+    //     $rawHash = "partnerCode=" . $partnerCode . "&accessKey=" . $accessKey . "&requestId=" . $requestId . "&amount=" . $amount . "&orderId=" . $orderId . "&orderInfo=" . $orderInfo . "&returnUrl=" . $returnUrl . "&notifyUrl=" . $notifyurl . "&extraData=" . $extraData;
+    //     $signature = hash_hmac("sha256", $rawHash, $secretKey);
+    //     $data = array(
+    //         'partnerCode' => $partnerCode,
+    //         'accessKey' => $accessKey,
+    //         'requestId' => $requestId,
+    //         'amount' => $amount,
+    //         'orderId' => $orderId,
+    //         'orderInfo' => $orderInfo,
+    //         'returnUrl' => $returnUrl,
+    //         'notifyUrl' => $notifyurl,
+    //         'extraData' => $extraData,
+    //         'requestType' => $requestType,
+    //         'signature' => $signature
+    //     );
+    //     $result = $this->execPostRequest($endpoint, json_encode($data));
+    //     $jsonResult = json_decode($result, true);  // decode json
+
+    //     dd($jsonResult);
+    //     return $jsonResult;
+    // }
+
+
     protected function config()
     {
         $config = '
