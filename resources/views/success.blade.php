@@ -1,3 +1,8 @@
+@php
+    if ($response['payType'] == 'VNPAY ATM') {
+        $response['amount'] = (int)$response['amount'] / 100;
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 
@@ -24,6 +29,7 @@
         </div>
     </div>
     {{--  --}}
+
     <div class="payment-success">
         <div class="payment-success-content">
             @if ($response['resultCode'] == 0)

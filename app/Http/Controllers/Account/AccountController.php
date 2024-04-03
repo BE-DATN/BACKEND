@@ -27,8 +27,8 @@ class AccountController extends Controller
         $this->middleware('auth:api', ['except' => $except]);
         // $this->middleware('auth:api', ['except' => $except]);
     }
-    
-    public function userLogin(Request $request, LoginUserAction $userAction, UserDTO $userDTO)
+
+    public function userLogin(Request $request, LoginUserAction $userAction)
     {
         // dd($request->all());
         $remember_me = $request->input('remember_token');
@@ -45,7 +45,7 @@ class AccountController extends Controller
         // Login & get token
         $token = $userAction->login($credentials, $remember_me);
         $userAction->createCookie($token, $remember_me);
-        
+
         if (!$token) {
             return response()->json([
                 'action' => "Login",

@@ -14,21 +14,6 @@ use App\Models\Post;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
-
-// Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//     return $request->user();
-// });
-
 Route::group([
     'middleware' => ['cors'],
 ], function () {
@@ -133,7 +118,7 @@ Route::group([
             'middleware' => ['auth', 'author.auth'],
         ], function () {
             Route::get('/', [AdminController::class, 'index']);
-            
+
             // Route::get
         });
     });
@@ -203,8 +188,31 @@ Route::group([
     // Route::get('test-query', function() {
     //     order::where('order_id', "1711077087")->first()->update(['order_status' => 100]);
     // });
-    Route::get('get-logs', function () {
-        $logs = log::select('*')->orderBy('id', 'desc')->limit(2)->get();
+    Route::get('logs', function () {
+        $logs = log::select('*')->orderBy('created_at', 'asc')->limit(5)->get();
         return response()->json(LogsResource::collection($logs), 200);
     });
 })->middleware('cors');
+Route::get('query', function () {
+    $user = getCurrentUser();
+    // dd($user);
+    $data = Order::join('order_details', 'orders.id', '=', 'order_details.order_id')
+        ->where('orders.user_id', array_get($user, 'id'))
+        ->where('orders.order_status', 1)
+        ->select('order_details.course_id', 'order_details.course_name')
+        ->distinct()
+        ->get();
+    // $data = order::select($select)
+    // ->join(
+    //     'order_details',
+    //     'orders.id',
+    //     '=',
+    //     'order_details.order_id'
+    // )
+    // ->where('order_status', 1)
+    // ->where('user_id', array_get($user, 'id'))
+    // ->distinct('order_details.course_id')
+    // ->get();
+
+    return response()->json($data, 200);
+});

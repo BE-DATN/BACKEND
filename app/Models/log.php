@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class log extends Model
 {
     use HasFactory;
+    protected $fillable = ['log', 'created_at', 'updated_at'];
 }

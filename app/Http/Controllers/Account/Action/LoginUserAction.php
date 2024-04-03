@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Account\Action;
 
+use App\Models\order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cookie;
 use Tymon\JWTAuth\Facades\JWTAuth;
@@ -41,19 +42,22 @@ class LoginUserAction
     public function respondWithToken($token)
     {
         $user = $this->getUserLogin();
-
+        $purchased = order::join('order_details', 'orders.id', '=', 'order_details.order_id')
+        ->where('orders.user_id', array_get($user, 'id'))
+        ->where('orders.order_status', 1)
+        ->select('order_details.course_id', 'order_details.course_name')
+        ->distinct()
+        ->get();
+        
         return response()->json([
             'data' => $this->tranferLoginData($user),
             'token_type' => 'bearer',
             'access_token' => $token,
             'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' second',
-            'permission' => $user->profile->roles->first()->name
+            'permission' => $user->profile->roles->first()->name,
+            'purchased_courses' => $purchased
             // 'refresh_token' => $refresh_token,
         ])->withCookie($this->cookie);
-    }
-
-    public function formatLifeTimeToken()
-    {
     }
 
     public function getUserLogin()

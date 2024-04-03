@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('course_id');
             $table->string('course_name');
             $table->integer('price');
+            $table->text('checkoutUrl')->nullable();
             $table->date('joined_course')->default(now());
             $table->tinyInteger('progess_learning');
             $table->timestamps();

@@ -41,11 +41,11 @@ class OrderController extends Controller
                 'payment_method' => $payment_method,
                 'voucher' => $voucher,
                 'order_status' => 0,
-                'order_id' => time() . "",
+                'order_id' => "ODR-" . time() . "",
             ]);
             // dd($order);
             if ($this->createOrderDetail($order, $cart_items)) {
-                DB::commit();
+                // DB::commit();
                 switch ($payment_method) {
                     case 'MOMO_ATM':
                         $jsonResult = $this->payMomoATM($order);
@@ -60,13 +60,24 @@ class OrderController extends Controller
                         $jsonResult = $this->payMomo($order);
                         break;
                 }
-                // if (array_get($jsonResult, 'payUrl')) {
-                // $this->clearCart($cart);
-                // }
+                // nếu không trả về link thanh toán
+                if (array_get($jsonResult, 'payUrl')) {
+                    DB::commit();
+                    order::find($order->id)->update(['checkoutUrl' => array_get($jsonResult, 'payUrl')]);
+                    // $this->clearCart($cart);
+                } else {
+                    DB::rollBack();
+                    return response()->json([
+                        'status' => false,
+                        'message' => 'Có lỗi xẩy ra từ nhà cung cấp dịch vụ thanh toán.',
+                    ], 400);
+                }
+                //
             } else {
                 DB::rollBack();
             }
             return response()->json([
+                'status' => true,
                 'message' => 'Đơn hàng đã được tạo thành công.',
                 'order_id' => $order->id,
                 'CheckOut' => array_get($jsonResult, 'payUrl')
@@ -76,7 +87,7 @@ class OrderController extends Controller
             return response()->json([
                 'message' => 'Có xẩy ra lỗi khi tạo đơn hàng này',
                 'error' => $th->getMessage()
-            ], 200);
+            ], 400);
         }
     }
 
@@ -213,7 +224,7 @@ class OrderController extends Controller
                         'amount' => $amount,
                         'Payment_method' => $payType
                     ];
-                    order::where('order_id', $orderId)->first()->update(['order_status' => 1]);
+                    order::where('order_id', $orderId)->first()->update(['order_status' => 1, 'checkoutUrl' => 'done']);
                     // dd(order::where('order_id', $orderId)->first());
                     DB::table('logs')->insert(['log' => json_encode($data)]);
                 } else {
@@ -536,8 +547,7 @@ class OrderController extends Controller
                     'amount' => $request->input('vnp_Amount'),
                     'Payment_method' => $request->input('vnp_CardType')
                 ];
-                order::where('order_id', $orderId)->first()->update(['order_status' => 1]);
-                // dd(order::where('order_id', $orderId)->first());
+                order::where('order_id', $orderId)->first()->update(['order_status' => 1, 'checkoutUrl' => 'done']);
                 DB::table('logs')->insert(['log' => json_encode($data)]);
             } else {
                 $data = [
@@ -563,7 +573,7 @@ class OrderController extends Controller
                 'message' => $request->input('vnp_TransactionStatus') == "00" ? "Thanh toán thành công" : "Có xẩy ra lỗi khi thanh toán vui lòng thử lại sau",
                 'orderId' => $orderId,
                 'amount' => $request->input('vnp_Amount'),
-                'payType' =>"VNPAY ". $request->input('vnp_CardType')
+                'payType' => "VNPAY " . $request->input('vnp_CardType')
             ],
             'debugger' => $debugger
         ]);

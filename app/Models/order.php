@@ -16,7 +16,8 @@ class order extends Model
         'payment_method',
         'voucher',
         'order_status',
-        'order_id'
+        'order_id',
+        'checkoutUrl'
     ];
 
     public static function getSold30Day()
