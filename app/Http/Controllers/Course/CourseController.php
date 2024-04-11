@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Course;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Course\Action\CourseAction;
+use App\Models\Post;
 use Illuminate\Http\Request;
 
 class CourseController extends Controller

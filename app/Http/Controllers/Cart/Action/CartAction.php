@@ -28,7 +28,7 @@ class CartAction
             if (count($cart->cartDetails) != 0) {
                 foreach ($cart->cartDetails as $value) {
                     if ($value->course_id == $course_id) {
-                        return ['message' => 'Sản phẩm đã được thêm vào giỏ hàng'];
+                        return ['status' => true, 'message' => 'Sản phẩm đã được thêm vào giỏ hàng'];
                     }
                 }
             }
@@ -37,10 +37,11 @@ class CartAction
                 'course_id' => $course_id,
             ]);
             // dd($cart_detail);
-            return ['message' => 'Sản phẩm đã được thêm vào giỏ hàng'];
+            return ['status' => true, 'message' => 'Sản phẩm đã được thêm vào giỏ hàng'];
             // return true;
         } catch (\Throwable $th) {
             return [
+                'status' => false,
                 'message' => 'Có lỗi xẩy ra khi thêm sản phẩm này vào giỏ hàng',
                 'error' => $th->getMessage()
             ];

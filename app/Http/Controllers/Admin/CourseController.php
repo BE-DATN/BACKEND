@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\DTO\Course\CourseDTO;
 use App\Http\Controllers\Admin\Action\CourseAction;
 use App\Models\lesson;
+use App\Models\order;
 use App\Models\Session;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -337,5 +338,37 @@ class CourseController extends Controller
     {
         $sessions =  Session::where('course_id', $request->input('course_id'))->orderBy('arrange', 'asc')->get();
         return response()->json($sessions, 200);
+    }
+    public function purchased_courses()
+    {
+        $user = getCurrentUser();
+        $courses = DB::table('order_details')
+            ->join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->join('courses', 'order_details.course_id', '=', 'courses.id')
+            ->join('users', 'users.id', '=', 'courses.created_by')
+            // ->where('courses.status', '1')
+            ->where('orders.user_id', array_get($user, 'id'))
+            ->where('orders.order_status', 1)
+            ->select(
+                'courses.id',
+                'courses.name',
+                'users.username',
+                'courses.description',
+                'courses.thumbnail',
+                'courses.video_demo_url',
+                'courses.price',
+                'views',
+                'courses.status',
+                'courses.created_at',
+                'courses.updated_at'
+            )
+            ->distinct()
+            ->get();
+        $data = [
+            'status' => true,
+            'title' => 'Danh sách Khóa học đã mua',
+            'courses' => CourseResource::collection($courses),
+        ];
+        return response()->json($data, 200);
     }
 }

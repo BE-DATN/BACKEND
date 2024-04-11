@@ -43,7 +43,7 @@ class CartController extends Controller
             }
         }
         $data = [
-            'status' => "ok",
+            'status' => true,
             'courses' => $courses,
             // 'item' => $items
         ];
@@ -54,7 +54,7 @@ class CartController extends Controller
         try {
             array_get($this->user, 'id');
             $cart = $this->getCart();
-            
+
             $data = $cartAction->addCartDetail($cart, $course_id);
             // $message = [
             //     'status' => true,
@@ -87,13 +87,14 @@ class CartController extends Controller
             $item = $this->getCart()->cartDetails->where('course_id', $id)->first();
             if ($item) {
                 $item->delete();
-                return response()->json(['message' => 'Sản phẩm đã được xóa khỏi giỏ hàng'], 200);
+                return response()->json(['status' => true,'message' => 'Sản phẩm đã được xóa khỏi giỏ hàng'], 200);
             } else {
-                return response()->json(['message' => 'Sản phẩm không tồn tại trong giỏ hàng'], 200);
+                return response()->json(['status' => false,'message' => 'Sản phẩm không tồn tại trong giỏ hàng'], 200);
             };
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json([
+                'status' => false,
                 'message' => 'Có lỗi xẩy ra khi xóa sản phẩm này khỏi giỏ hàng',
                 'error' => $th->getMessage()
             ], 200);
@@ -108,10 +109,11 @@ class CartController extends Controller
             // dd( $cart->cartDetails->where('cart_id', $cart->id));
             // $cart->cartDetails->where('cart_id', $cart->id)->delete();
             $cart->delete();
-            return response()->json(['message' => 'Giỏ hàng đã được xóa'], 200);
+            return response()->json(['status' => true,'message' => 'Giỏ hàng đã được xóa'], 200);
         } catch (\Throwable $th) {
             //throw $th;
             return response()->json([
+                'status' => false,
                 'message' => 'Có lỗi xẩy ra khi xóa sản phẩm trong giỏ hàng',
                 'error' => $th->getMessage()
             ], 200);

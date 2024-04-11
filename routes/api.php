@@ -4,6 +4,7 @@ use App\DTO\Post\PostDTO;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CourseController;
 use App\Http\Controllers\Account\AccountController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
@@ -11,6 +12,7 @@ use App\Http\Resources\LogsResource;
 use App\Models\log;
 use App\Models\order;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -19,8 +21,8 @@ Route::group([
 ], function () {
     Route::get('/', function () {
         return response()->json([
-            "Project" => env('APP_NAME'),
-            "Status" => "ok!",
+            // "Project" => env('APP_NAME'),
+            // "Status" => "ok!",
             "Php" => phpversion(),
             "Laravel" => app()->version(),
         ], 200);
@@ -107,6 +109,8 @@ Route::group([
             Route::post('/delete/{id}', [CourseController::class, 'destroy'])->whereNumber('id');
             Route::get('/create-session', [CourseController::class, 'addSession']);
             Route::get('/create-lesson', [CourseController::class, 'addLession']);
+            Route::get('/purchased_courses', [CourseController::class, 'purchased_courses']);
+
         });
     });
 
@@ -118,7 +122,10 @@ Route::group([
             'middleware' => ['auth', 'author.auth'],
         ], function () {
             Route::get('/', [AdminController::class, 'index']);
-
+            Route::get('/users', [UserController::class, 'getUser'])->whereNumber('id');
+            Route::get('/user/{id}', [UserController::class, 'getUserById']);
+            Route::post('/user/create', [UserController::class, 'store']);
+            Route::get('/get-role', [UserController::class, 'getRole']);
             // Route::get
         });
     });
@@ -189,30 +196,47 @@ Route::group([
     //     order::where('order_id', "1711077087")->first()->update(['order_status' => 100]);
     // });
     Route::get('logs', function () {
-        $logs = log::select('*')->orderBy('created_at', 'asc')->limit(5)->get();
+        $logs = log::select('*')->orderBy('id', 'desc')->limit(5)->get();
         return response()->json(LogsResource::collection($logs), 200);
     });
 })->middleware('cors');
 Route::get('query', function () {
     $user = getCurrentUser();
     // dd($user);
-    $data = Order::join('order_details', 'orders.id', '=', 'order_details.order_id')
-        ->where('orders.user_id', array_get($user, 'id'))
-        ->where('orders.order_status', 1)
-        ->select('order_details.course_id', 'order_details.course_name')
-        ->distinct()
-        ->get();
-    // $data = order::select($select)
-    // ->join(
-    //     'order_details',
+    // $user = User::find(array_get($user, 'id'));
+
+    // $data = Order::join('order_details', 'orders.id', '=', 'order_details.order_id')
+    //     ->where('orders.user_id', array_get($user, 'id'))
+    //     ->where('orders.order_status', 1)
+    //     ->select('order_details.course_id', 'order_details.course_name')
+    //     ->distinct()
+    //     ->get();
+    // dd()
+    // $data = Order::select([
     //     'orders.id',
-    //     '=',
-    //     'order_details.order_id'
-    // )
-    // ->where('order_status', 1)
-    // ->where('user_id', array_get($user, 'id'))
-    // ->distinct('order_details.course_id')
+    //     'users.username',
+    //     'orders.order_id',
+    //     'voucher',
+    //     'orders.order_status',
+    //     'total_amount',
+    //     'payment_method',
+    //     'orders.created_at',
+    // ])
+    // ->join('order_details', 'orders.id', '=', 'order_details.order_id')
+    // ->join('users', 'orders.user_id', '=', 'users.id')
+    // ->join('courses', 'order_details.course_id', '=', 'courses.id')
+    // ->where('courses.created_by', array_get($user, 'id'))
     // ->get();
 
+    $data = DB::table('order_details')
+    ->join('orders', 'order_details.order_id', '=', 'orders.id')
+    ->join('courses', 'order_details.course_id', '=', 'courses.id')
+    ->where('orders.user_id', array_get($user, 'id'))
+    ->where('orders.order_status', 1)
+    ->select('courses.*')
+    ->distinct()
+    ->get();
+
+        // dd($data );
     return response()->json($data, 200);
 });
