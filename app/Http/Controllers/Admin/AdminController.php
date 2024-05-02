@@ -50,6 +50,7 @@ class AdminController extends Controller
                     'orders.created_at',
                 ])
                     ->join('users', 'orders.user_id', '=', 'users.id')
+                    ->orderBy('created_at', 'desc')
                     ->get();
 
                 // sold30d data chart
@@ -77,6 +78,7 @@ class AdminController extends Controller
                     ->join('users', 'orders.user_id', '=', 'users.id')
                     ->join('courses', 'order_details.course_id', '=', 'courses.id')
                     ->where('courses.created_by', array_get($user, 'id'))
+                    ->orderBy('created_at', 'desc')
                     ->get();
 
                 $sold30d = order::getSold30Day();

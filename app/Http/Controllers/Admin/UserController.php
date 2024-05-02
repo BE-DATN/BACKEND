@@ -26,6 +26,7 @@ class UserController extends Controller
     {
         try {
             $users = User::all();
+            // dd($users);
             $data = [
                 'name' => 'Danh sách người dùng',
                 'status' => true,
@@ -212,6 +213,53 @@ class UserController extends Controller
                 'error' => $th->getMessage()
             ];
             return response()->json($data, 400);
+        }
+    }
+    public function setRole(Request $request)
+    {
+        try {
+            $user = getCurrentUser();
+            $user = User::find(array_get($user, 'id'));
+            // return response()->json($user->profile->roles->first()->name);
+            if ($user->profile->roles->first()->name == 'ADMIN') {
+                # code...
+                $roleId = $request->input('role_id');
+                $userId = $request->input('user_id');
+                $user = User::find($userId);
+                $role = Role::find($roleId);
+                return response()->json($role);
+                $profile = $user->profile;
+                if ($role) {
+                    $profile_update = Role_Profile::where('role_profiles.profile_id', $profile->id)->first()->update([
+                        'role_id' => $roleId
+                    ]);
+
+                    $data = [
+                        'status' => true,
+                        'message' => "Vai trò đã được cập nhật",
+                        'permission' => $profile->roles->first()->name,
+                    ];
+                } else {
+                    $data = [
+                        'status' => false,
+                        'message' => "Không tìm thấy vai trò này",
+                    ];
+                }
+                return response()->json($data, 200);
+            } else {
+                $data = [
+                    'status' => false,
+                    'message' => "Chỉ có Admin mới có thể thay đổi vai trò",
+                ];
+                return response()->json($data, 200);
+            }
+        } catch (\Throwable $th) {
+            $data = [
+                'status' => false,
+                'message' => "Có xẩy ra lỗi khi cập nhật vai trò",
+                'error' => $th->getMessage()
+            ];
+            return response()->json($data, 200);
         }
     }
 }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->tinyInteger('arrange');
             $table->string('description', 500);
-            $table->string('thumbnail', 500);
+            $table->string('thumbnail', 500)->nullable();
             $table->timestamps();
         });
     }

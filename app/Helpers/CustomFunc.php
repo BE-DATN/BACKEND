@@ -31,18 +31,19 @@ if (!function_exists('getCookie')) {
 if (!function_exists('getCurrentUser')) {
     function getCurrentUser()
     {
-        $request = new Request();
         $user = null;
-        if ($user == null && getCookie()) {
-            $user = getCookie()['data'];
+        try {
+            $request = new Request();
+            if ($user == null && getCookie()) {
+                $user = getCookie()['data'];
+            }
+            if ($user == null && JWTAuth::parseToken()->authenticate()) {
+                $user = JWTAuth::parseToken()->authenticate();
+            }
+            return $user;
+        } catch (\Throwable $th) {
+            return $user;
         }
-        if ($user == null && JWTAuth::parseToken()->authenticate()) {
-            $user = JWTAuth::parseToken()->authenticate();
-        }
-        // if (JWTAuth::parseToken()->authenticate()) {
-        //     $user = JWTAuth::parseToken()->authenticate();
-        // }
-        return $user;
     }
 }
 if (!function_exists('ccc')) {

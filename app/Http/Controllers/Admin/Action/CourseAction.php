@@ -14,10 +14,12 @@ class CourseAction
 
         $this->request = $request;
     }
-    public function search()
+    public function search($purchasedCourses = null)
     {
         $inp = $this->request->all();
         $attribute = removeNullOrEmptyString($inp);
+
+
 
         /** key search
          * ?author_name=
@@ -103,19 +105,22 @@ class CourseAction
                 "%" . array_get($attribute, 'keySearch') . "%"
             )
             ;
-
         }
 
         // Search time
         // sắp xếp view||like asc||desc
+        // if ($purchasedCourses) {
+        //     $purchasedCourseIds = $purchasedCourses->pluck('course_id')->toArray();
+
+        //     $query->whereNotIn('courses.id', $purchasedCourseIds);
+        // }
         if (array_get($attribute, 'sort')) {
             $sort = json_decode(array_get($attribute, 'sort'));
             $column = $sort[0];
             $valueSort = $sort[1];
             $query->orderBy($column, $valueSort);
         }
-        // $limit = array_get($attribute, 'limit') ? array_get($attribute, 'limit') : Course::limit;
+
         return $query->get();
-        // return $query;
     }
 }

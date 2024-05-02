@@ -15,6 +15,7 @@ class PostDTO
         return [
             'id' => $posts->id,
             'title' => $posts->title,
+            'creator' => $posts->username ? $posts->username : null,
             'content' => $posts->content,
             'thumbnail' => asset($posts->thumbnail),
             'likes' => $posts->likes,

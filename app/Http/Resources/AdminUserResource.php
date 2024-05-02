@@ -14,6 +14,7 @@ class AdminUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // dd($this->profile->avata_img);
         return [
             'id' => $this->id,
             'username' => $this->username,
@@ -21,7 +22,7 @@ class AdminUserResource extends JsonResource
             'status' => $this->status,
             'created_at' => date('Y-m-d H:i:s', strtotime($this->created_at)),
             'updated_at' => date('Y-m-d H:i:s', strtotime($this->updated_at)),
-            'description' => $this->description,
+            'avata' => $this->profile->avata_img ? asset($this->profile->avata_img):'',
             'description' => $this->description,
             'permission' => $this->profile->roles->first()->name,
         ];

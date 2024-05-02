@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Post;
 use App\DTO\Post\PostDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Post\Action\PostAction;
+use App\Http\Resources\PostCommentResource;
 use App\Http\Resources\PostsResource;
 use App\Models\Post;
 use App\Models\Post_Comment;
@@ -39,21 +40,40 @@ class PostController extends Controller
     public function list($id = null)
     {
         $id = array_get(getCurrentUser(), 'id');
-        $posts = DB::table('posts')->select([
-            'posts.id',
-            'posts.title',
-            'username',
-            'posts.content',
-            'posts.thumbnail',
-            'posts.views',
-            'posts.likes',
-            'posts.created_at',
-            'posts.updated_at',
-        ])
-        ->join('users', 'posts.created_by', '=', 'users.id')
-        ->where('created_by', $id)
-        ->get();
+        if (auth()->user()->profile->roles->first()->name === 'ADMIN') {
+            $posts = DB::table('posts')->select([
+                'posts.id',
+                'posts.title',
+                'username',
+                'posts.content',
+                'posts.thumbnail',
+                'posts.views',
+                'posts.likes',
+                'posts.created_at',
+                'posts.updated_at',
+            ])
+                ->join('users', 'posts.created_by', '=', 'users.id')
+                // ->where('created_by', $id)
+                ->get();
+        } else {
+
+            $posts = DB::table('posts')->select([
+                'posts.id',
+                'posts.title',
+                'username',
+                'posts.content',
+                'posts.thumbnail',
+                'posts.views',
+                'posts.likes',
+                'posts.created_at',
+                'posts.updated_at',
+            ])
+                ->join('users', 'posts.created_by', '=', 'users.id')
+                ->where('created_by', $id)
+                ->get();
+        }
         // ->paginate(Post::Limit);
+        // dd($posts);
         $data = [
             'page' => 'DS Bài viết của: ' . $posts[0]->username,
             'posts' => PostsResource::collection($posts),
@@ -164,6 +184,10 @@ class PostController extends Controller
     {
         try {
             Post::destroy($id);
+
+            Post_Comment::where('post_id', $id)->delete();
+
+
             return response()->json([
                 'status' => true,
                 'message' => "Xóa bài viết $id thành công.",
@@ -183,7 +207,24 @@ class PostController extends Controller
     public function show($id, PostDTO $postDTO)
     {
         //
-        $post = Post::find($id);
+        // $post = Post::find($id);
+
+        $post = DB::table('posts')->select([
+            'posts.id',
+            'posts.title',
+            'username',
+            'posts.content',
+            'posts.thumbnail',
+            'posts.views',
+            'posts.likes',
+            'posts.status',
+            'posts.created_at',
+            'posts.updated_at',
+        ])
+            ->join('users', 'posts.created_by', '=', 'users.id')
+            ->where('posts.id', $id)
+            // ->where('posts.status', 1)
+            ->first();
         if (!$post) {
             return response()->json([
                 'status' => false,
@@ -191,10 +232,69 @@ class PostController extends Controller
             ]);
         }
         if ($post) {
+            if (!$post->status) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Bài viết này đã bị ẩn.',
+                ]);
+            }
+            $view = post::find($post->id);
+            $view->views += random_int(1, 10);
+            $view->save();
+            $comment = Post_Comment::where('post_id', $post->id)->get();
             $post = $postDTO->postsDetail($post);
             return response()->json([
                 'status' => true,
-                'data' => $post
+                'data' => $post,
+                'comments' => PostCommentResource::collection($comment)
+            ], 200);
+        }
+        // dd($data);
+        // return view('edit', $data);
+    }
+    public function showAdmin($id, PostDTO $postDTO)
+    {
+        //
+        // $post = Post::find($id);
+
+        $post = DB::table('posts')->select([
+            'posts.id',
+            'posts.title',
+            'username',
+            'posts.content',
+            'posts.thumbnail',
+            'posts.views',
+            'posts.likes',
+            'posts.status',
+            'posts.created_at',
+            'posts.updated_at',
+        ])
+            ->join('users', 'posts.created_by', '=', 'users.id')
+            ->where('posts.id', $id)
+            // ->where('posts.status', 1)
+            ->first();
+        if (!$post) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Không tìm thấy bài viết này.',
+            ]);
+        }
+        if ($post) {
+            // if (!$post->status) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => 'Bài viết này đã bị ẩn.',
+            //     ]);
+            // }
+            $view = post::find($post->id);
+            $view->views += random_int(1, 10);
+            $view->save();
+            $comment = Post_Comment::where('post_id', $post->id)->get();
+            $post = $postDTO->postsDetail($post);
+            return response()->json([
+                'status' => true,
+                'data' => $post,
+                'comments' => PostCommentResource::collection($comment)
             ], 200);
         }
         // dd($data);
@@ -204,7 +304,7 @@ class PostController extends Controller
     {
         try {
             $request->validate([
-                'title' => 'required|max:500',
+                // 'title' => 'required|max:500',
                 'content' => 'required|max:1000',
             ]);
             if ($post = Post::where('id', $id)->where('status', 1)->first()) {

@@ -27,7 +27,7 @@ class AdminUserDTO
                 'gender' => $user->profile->gender,
                 'phone' => $user->profile->phone,
                 'address' => $user->profile->address,
-                'avata_img' => $user->profile->avata_img,
+                'avata_img' => asset($user->profile->avata_img),
             ]
 
         ];

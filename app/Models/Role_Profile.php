@@ -10,9 +10,11 @@ class Role_Profile extends Model
     use HasFactory;
     protected $table = 'role_profiles';
     protected $fillable = [
-        'name', 
+        'role_id',
+        'name',
         'level',
-        'decription'
+        'decription',
+        'user_id',
     ];
     // public function profile() {
     //     return $this->be

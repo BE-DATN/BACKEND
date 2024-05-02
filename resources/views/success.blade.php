@@ -52,7 +52,7 @@
             @endif
             <div class="btn">
                 <a href="http://course-selling.id.vn" id="home">Trang chủ</a>
-                <a href="http://course-selling.id.vn" id="viewOrder">Xem đơn hàng</a>
+                <a href="http://course-selling.id.vn/profile-user/1" id="viewOrder">Xem đơn hàng</a>
             </div>
         </div>
     </div>

@@ -52,13 +52,14 @@ class CourseController extends Controller
             $user = getCurrentUser();
             $request->request->add(['created_by' => array_get($user, 'id')]);
             $request->request->add(['thumbnail' => "file/uploads/posts/$imageName"]);
+            $request->request->add(['video_demo_url' => "file/uploads/course/$video_demo_name"]);
             // dd($request->input());
             // dd($request->input());
             $post = Post::create($request->input());
 
             return response()->json([
                 'status' => true,
-                'message' => 'Bài viết đã được tạo thành công',
+                'message' => 'Khóa học đã được tạo thành công',
                 'post' => $post
             ]);
         } catch (\Throwable $th) {

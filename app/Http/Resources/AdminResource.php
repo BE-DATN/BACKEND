@@ -23,6 +23,7 @@ class AdminResource extends JsonResource
             'total_amount' => $this->total_amount,
             'payment_method' => $this->payment_method,
             'created_at' => date('Y-m-d H:i', strtotime($this->created_at)),
+            'checkoutUrl' => $this->checkoutUrl ? $this->checkoutUrl : null,
         ];
     }
 }

@@ -8,11 +8,17 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Order\OrderController;
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Post\PostController;
+use App\Http\Controllers\Quiz\QuizController;
 use App\Http\Resources\LogsResource;
+use App\Http\Resources\QuizResource;
+use App\Models\Course;
 use App\Models\log;
 use App\Models\order;
 use App\Models\Post;
+use App\Models\quizzProgress;
+use App\Models\Role;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -55,9 +61,8 @@ Route::group([
     Route::group([
         'prefix' => 'account',
     ], function () {
-        // Route::get('login', [AccountController::class, 'login']);
         Route::get('login', [AccountController::class, 'login'])->name('user.login');
-        Route::get('register', [AccountController::class, 'register'])->name('user.register');
+        // Route::get('register', [AccountController::class, 'register'])->name('user.register');
 
         Route::post('loginp', [AccountController::class, 'userLogin'])->name('user.post.login');
         Route::post('registerp', [AccountController::class, 'userRegister'])->name('user.post.register');
@@ -65,8 +70,10 @@ Route::group([
         Route::group([
             'middleware' => ['auth'], //, 'jwt.auth',
         ], function () {
+            Route::post('change-pass', [AccountController::class, 'changePass']);
             Route::get('refresh', [AccountController::class, 'refresh']);
             Route::get('me', [AccountController::class, 'me']);
+            Route::get('myOrder', [AccountController::class, 'myOrder']);
             Route::post('logout', [AccountController::class, 'logout']);
         });
     });
@@ -78,16 +85,23 @@ Route::group([
     ], function () {
         Route::get('/', [PostController::class, 'index']);
         Route::get('/{id}', [PostController::class, 'show'])->whereNumber('id');
-
+        
         Route::group([
             'middleware' => ['auth', 'author.auth'],
         ], function () {
+            Route::get('/show-edit/{id}', [PostController::class, 'showAdmin'])->whereNumber('id');
             Route::get('/list-owned-posts/{userId?}', [PostController::class, 'list'])->whereNumber('userId');
             Route::post('/create', [PostController::class, 'store']);
-            Route::post('/comment/{id}', [PostController::class, 'comment'])->whereNumber('id');
-
+            
             Route::post('/edit/{id}', [PostController::class, 'update'])->whereNumber('id')->middleware('action.auth');
             Route::post('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->middleware('action.auth');
+        });
+        Route::group([
+            'middleware' => ['auth'],
+        ], function () {
+            Route::post('/comment/{id}', [PostController::class, 'comment'])->whereNumber('id');
+
+            // Route::post('/delete/{id}', [PostController::class, 'destroy'])->whereNumber('id')->middleware('action.auth');
         });
     });
 
@@ -98,19 +112,32 @@ Route::group([
         Route::get('/', [CourseController::class, 'index']);
         Route::get('/{id}', [CourseController::class, 'show'])->whereNumber('id');
 
-        Route::get('/getSession', [CourseController::class, 'getSession']);
 
         Route::group([
             'middleware' => ['auth', 'author.auth'],
         ], function () {
             Route::get('/list-owned-courses/{userId?}', [CourseController::class, 'list'])->whereNumber('userId');
             Route::post('/create', [CourseController::class, 'store']);
+            Route::get('/show-edit/{id}', [CourseController::class, 'adminShow'])->whereNumber('id');
             Route::post('/edit/{id}', [CourseController::class, 'update'])->whereNumber('id');
             Route::post('/delete/{id}', [CourseController::class, 'destroy'])->whereNumber('id');
-            Route::get('/create-session', [CourseController::class, 'addSession']);
-            Route::get('/create-lesson', [CourseController::class, 'addLession']);
-            Route::get('/purchased_courses', [CourseController::class, 'purchased_courses']);
+            Route::post('/delete/session/{id}', [CourseController::class, 'destroySession'])->whereNumber('id');
+            Route::post('/delete/lesson/{id}', [CourseController::class, 'destroyLesson'])->whereNumber('id');
+            Route::post('/create-session', [CourseController::class, 'addSession']);
+            Route::post('/create-lesson', [CourseController::class, 'addLession']);
+            // quiz
+            Route::post('/create-quiz', [QuizController::class, 'createQuiz']);
+        });
 
+        Route::group([
+            'middleware' => ['auth'],
+        ], function () {
+            Route::get('/getSession/{courseId}', [CourseController::class, 'getSession']);
+            Route::get('/getLesson/{sesssionId}', [CourseController::class, 'getLesson']);
+            Route::get('/purchased_courses', [CourseController::class, 'purchased_courses']);
+            Route::post('/rating-course/{id}', [CourseController::class, 'ratingCourse'])->whereNumber('id');
+            Route::get('/purchased_courses/{id}', [CourseController::class, 'showPurchasedCourse']);
+            Route::post('/do-quiz', [QuizController::class, 'doQuiz']);
         });
     });
 
@@ -119,14 +146,15 @@ Route::group([
         'prefix' => 'admin',
     ], function () {
         Route::group([
-            'middleware' => ['auth', 'author.auth'],
+            // 'middleware' => ['auth', 'author.auth'],
+            'middleware' => ['auth'],
         ], function () {
             Route::get('/', [AdminController::class, 'index']);
             Route::get('/users', [UserController::class, 'getUser'])->whereNumber('id');
             Route::get('/user/{id}', [UserController::class, 'getUserById']);
             Route::post('/user/create', [UserController::class, 'store']);
             Route::get('/get-role', [UserController::class, 'getRole']);
-            // Route::get
+            Route::post('/set-role', [UserController::class, 'setRole']);
         });
     });
 
@@ -152,14 +180,14 @@ Route::group([
     ], function () {
         Route::get('/redirect-notification', [OrderController::class, 'result']);
         Route::post('/payment-notification', [OrderController::class, 'apn']);
+        Route::get('/vnp-redirect', [OrderController::class, 'vnp_return']);
+        Route::get('/vnp-ipn', [OrderController::class, 'vmp_apn']);
         Route::group([
             'middleware' => ['auth'],
         ], function () {
             Route::get('/{id}', [OrderController::class, 'viewOrder'])->whereNumber('id');
             Route::get('/detail/{id}', [OrderController::class, 'viewOrderDetail'])->whereNumber('id');
             Route::get('/pay', [OrderController::class, 'order']);
-            Route::get('/vnp-redirect', [OrderController::class, 'vnp_return']);
-            Route::get('/vnp-ipn', [OrderController::class, 'vmp_apn']);
         });
     });
 
@@ -228,15 +256,30 @@ Route::get('query', function () {
     // ->where('courses.created_by', array_get($user, 'id'))
     // ->get();
 
-    $data = DB::table('order_details')
-    ->join('orders', 'order_details.order_id', '=', 'orders.id')
-    ->join('courses', 'order_details.course_id', '=', 'courses.id')
-    ->where('orders.user_id', array_get($user, 'id'))
-    ->where('orders.order_status', 1)
-    ->select('courses.*')
-    ->distinct()
-    ->get();
+    // $data = DB::table('order_details')
+    // ->join('orders', 'order_details.order_id', '=', 'orders.id')
+    // ->join('courses', 'order_details.course_id', '=', 'courses.id')
+    // ->where('orders.user_id', array_get($user, 'id'))
+    // ->where('orders.order_status', 1)
+    // ->select('courses.*')
+    // ->distinct()
+    // ->get();
+    // $data = DB::table('quizzes')
+    // ->join('questions', 'quizzes.id', '=', 'questions.quizz_id')
+    // ->select('questions.id as question_id', 'quizz_id', 'question')
+    // ->where('lesson_id', 4)
+    // ->get();
+    // $data = Course::find(1)
+    // ->join('sessions', 'courses.id', '=', 'sessions.course_id')
+    // ->join('lessons', 'sessions.id', '=', 'lessons.session_id')
+    // ->join('quizzes', 'lessons.id', '=', 'quizzes.lesson_id')
+    // ->join('questions', 'quizzes.id', '=', 'questions.quizz_id')->count();
+    // ->join('answers', 'answers.question_id', '=', 'questions.id')->get();
+    // $data = quizzProgress::where('course_id', 1)
+    // ->where('user_id', 1)
+    // ->get();
 
         // dd($data );
-    return response()->json($data, 200);
+    // return response()->json($data, 200);
 });
+

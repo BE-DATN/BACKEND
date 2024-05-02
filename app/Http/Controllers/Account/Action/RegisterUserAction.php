@@ -85,8 +85,12 @@ class RegisterUserAction
     public function createProfileForUser($id)
     {
         $errors = array();
-
         try {
+            $imageName = null;
+            if ($this->request->hasFile('avata_img')) {
+                $imageName = 'avata_img_' . uniqid() . '_.' . $this->request->file('avata_img')->extension();
+                $this->request->file('avata_img')->move(public_path('file/uploads/users/'), $imageName);
+            }
             $profile = Profile::create([
                 "user_id" => $id,
                 "firstname" => $this->request->firstname,
@@ -94,7 +98,7 @@ class RegisterUserAction
                 "gender" => $this->request->gender,
                 "phone" => $this->request->phone,
                 "address" => $this->request->address,
-                "avata_img" => $this->request->avata_img ? $this->request->avata_img : null,
+                "avata_img" => $imageName ? "file/uploads/users/$imageName" : null,
             ]);
 
             // dd($this->createRoleForUser($profile->id)->original['status']);

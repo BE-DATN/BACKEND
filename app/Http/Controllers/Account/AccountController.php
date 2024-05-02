@@ -6,9 +6,12 @@ use App\DTO\User\UserDTO;
 use App\Http\Controllers\Account\Action\LoginUserAction;
 use App\Http\Controllers\Account\Action\RegisterUserAction;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\AdminResource;
+use App\Models\order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AccountController extends Controller
@@ -58,7 +61,9 @@ class AccountController extends Controller
     }
 
 
-    public function userRegister(RegisterUserAction $userAction) {
+    public function userRegister(RegisterUserAction $userAction, Request $request) {
+        // return response()->json($request->input());
+
         $user = $userAction->createUser();
 
         // dd(array_get($user->original, 'error'));
@@ -108,23 +113,38 @@ class AccountController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refresh()
+    public function myOrder()
     {
-        // try {
-        //     $refresh_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5IiwicmFuZG9tIjoiOTQ5MjAwNDcxNzA5MTkzMDEwIiwiZXhwIjoxNzA5MTkzMDEwMjE2MDB9.uPXbMWh-d8lODR6YGbnfTrrep5eI-uuFiY7ScijL4hU';
-        //     $decoded = JWTAuth::getJWTProvider()->decode($refresh_token);
-        //     $user = User::find($decoded['sub']);//find sub = user_id
-        //     if (!$user) {
-        //         return response()->json(['error' => "Không tìm thấy người dùng có  ID là {$decoded['sub']}"], 404);
-        //     }
-        //     return response()->json($user);
-        // } catch (\Throwable $th) {
-        //     return response()->json(['error' => 'Refresh Token không đúng hoặc đã hết hạn'], 500);
-        //     //throw $th;
-
-        // }
-        // return $this->respondWithToken(auth()->refresh());
-        return response()->json(['message' => 'method refresh token', 'status' => 'coming soon']);
+        try {
+            $user = getCurrentUser();
+            $orders = order::select([
+                'orders.id',
+                'orders.user_id',
+                'users.username',
+                'order_id',
+                'voucher',
+                'orders.order_status',
+                'total_amount',
+                'payment_method',
+                'orders.created_at',
+                'orders.checkoutUrl',
+            ])
+                ->join('users', 'orders.user_id', '=', 'users.id')
+                ->where('orders.user_id', array_get($user, 'id'))
+                ->get();
+            $data = [
+                'status' => true,
+                'orders' => AdminResource::collection($orders)
+            ];
+            return response()->json($data, 200);
+        } catch (\Throwable $th) {
+            //throw $th;
+            $data = [
+                'status' => false,
+                'error' => $th->getMessage()
+            ];
+            return response()->json($data, 400);
+        }
     }
 
     /**
@@ -143,12 +163,30 @@ class AccountController extends Controller
         return response()->json($data);
     }
 
-    public function register()
+    public function changePass(Request $request)
     {
-        $data = [
-            "page" => "register",
-        ];
-        return response()->json($data);
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6',
+        ]);
+
+        $user = auth()->user();
+        // dd($user);
+        if (!Hash::check($request->current_password, $user->password)) {
+            // return redirect()->back()->with('error', 'Current password is incorrect.');
+            return response()->json([
+                'status' => false,
+                'message' => 'Mật khẩu hiện tại không chính xác',
+            ], 200);
+        }
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+        return response()->json([
+            'status' => true,
+            'message' => 'Mật khẩu đã được thay đổi',
+        ], 200);
+
+
     }
 
 }

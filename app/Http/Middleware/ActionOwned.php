@@ -23,16 +23,17 @@ class ActionOwned
         $input = $user->profile->roles->toArray();
 
         // addmin qua luôn khỏi check tác giả
+        // return response()->json([$input]);
         foreach ($input as $role) {
-            if (array_get($role, 'name') == "ADMIN" ) {
+            if (array_get($role, 'name') == "ADMIN" || array_get($role, 'name') == "TEACHER") {
                 return $next($request);
             }
         }
 
-        if (array_get($user, 'id') == $request->route()->parameter('id')) {
-            return response()->json(['actionOwned'], 403);
-            return $next($request);
-        }
+        // if (array_get($user, 'id') == $request->route()->parameter('id')) {
+        //     return response()->json(['actionOwned'], 403);
+        //     return $next($request);
+        // }
 
         $message = [
             'status' => false,

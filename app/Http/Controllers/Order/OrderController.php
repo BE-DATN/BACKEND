@@ -64,7 +64,7 @@ class OrderController extends Controller
                 if (array_get($jsonResult, 'payUrl')) {
                     DB::commit();
                     order::find($order->id)->update(['checkoutUrl' => array_get($jsonResult, 'payUrl')]);
-                    // $this->clearCart($cart);
+                    $this->clearCart($cart);
                 } else {
                     DB::rollBack();
                     return response()->json([

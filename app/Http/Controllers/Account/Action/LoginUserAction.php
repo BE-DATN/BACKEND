@@ -51,10 +51,12 @@ class LoginUserAction
 
         return response()->json([
             'status' => true,
-            'data' => $this->tranferLoginData($user),
+            // 'data' => $this->tranferLoginData($user),
+            'data' => $user ,
             'token_type' => 'bearer',
             'access_token' => $token,
-            'expires_in' => JWTAuth::factory()->getTTL() * 60 . ' second',
+            'expires_in' => JWTAuth::factory()->getTTL() * 60,
+            'avata' => asset($user->profile->avata_img),
             'permission' => $user->profile->roles->first()->name,
             'purchased_courses' => $purchased
             // 'refresh_token' => $refresh_token,
